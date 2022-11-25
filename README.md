@@ -13,18 +13,18 @@ Figure below shows how consistency between aggregates is achieved by domain even
 
 ### How to Define, Publish and Subscribe to an Event using DomainEvents library?
 
-> 1. Define - To implement a domain event, simply derive the event class from `IDomainEvent` interface.
+1. Define - To implement a domain event, simply derive the event class from `IDomainEvent` interface.
 ```
 public class CustomerCreated : IDomainEvent {
         public string Name { get; set; }
 }
  ```
-> 2. Publish - To raise the domain event, Inject `IPublisher` using your favourite IoC container and call the `RaiseAsync()` method.
+2. Publish - To raise the domain event, Inject `IPublisher` using your favourite IoC container and call the `RaiseAsync()` method.
 ```
   var @event = new CustomerCreated { Name = "Ninja Sha!4h" };
   await _Publisher.RaiseAsync(@event);
 ```
-> 3. Subscribe - To listen to a domain event, implement `IHandler<T>` interface where T is the event type you indend to handle.
+3. Subscribe - To listen to a domain event, implement `IHandler<T>` interface where T is the event type you intend to handle.
 ```
 public class CustomerCreatedHandler : IHandler<CustomerCreated>
 {
@@ -35,7 +35,7 @@ public class CustomerCreatedHandler : IHandler<CustomerCreated>
      }
 }
 ```
-> 4. Example - IoC Container Registrations
+4. Example - IoC Container Registrations
 ```
 public void ConfigureServices(IServiceCollection services)
 {   
