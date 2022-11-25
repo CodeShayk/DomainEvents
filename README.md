@@ -6,12 +6,10 @@ Use domain events to explicitly implement side effects of changes within your do
 The domain events and their side effects (the actions triggered afterwards that are managed by event handlers) should occur almost immediately, usually in-process, and within the same domain.
 It's important to ensure that, just like a database transaction, either all the operations related to a domain event finish successfully or none of them do.
 
-Figure below shows how consistency between aggregates is achieved by domain events. When the user initiates an order, the `Order Aggregate` sends an `OrderStarted` domain event. The OrderStarted domain event is handled by the `Buyer Aggregate` to create a Buyer object in the ordering microservice (bounded context).
+Figure below shows how consistency between aggregates is achieved by domain events. When the user initiates an order, the `Order Aggregate` sends an `OrderStarted` domain event. The OrderStarted domain event is handled by the `Buyer Aggregate` to create a Buyer object in the ordering microservice (bounded context). Please read [Domain Events](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation) for more details.
 
 ![image](https://user-images.githubusercontent.com/6259981/204060193-d2f5241e-c1d2-46ab-a16d-1c3047bc151b.png)
 
-Please read [Domain Events](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation) for more details.
- 
 
 ### How to Define, Publish and Subscribe to an Event using DomainEvents library?
 
@@ -26,7 +24,7 @@ public class CustomerCreated : IDomainEvent {
   var @event = new CustomerCreated { Name = "Ninja Sha!4h" };
   await _Publisher.RaiseAsync(@event);
 ```
-> 3. Subscribe - To listen to a domain event, implement `IHandle<T>` interface where T is the event type.
+> 3. Subscribe - To listen to a domain event, implement `IHandler<T>` interface where T is the event type.
 ```
 public class CustomerCreatedHandler : IHandler<CustomerCreated>
 {
