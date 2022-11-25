@@ -22,6 +22,7 @@
     <RepositoryUrl>https://github.com/NinjaRocks/Ninja.DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>domain-events; domain events; .net6.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
