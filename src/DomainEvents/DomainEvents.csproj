@@ -5,16 +5,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <IncludeSymbols>False</IncludeSymbols>
+    <IncludeSymbols>True</IncludeSymbols>
     <PackageId>Dormito.DomainEvents</PackageId>
     <AssemblyName>Dormito</AssemblyName>
     <RootNamespace>DomainEvents</RootNamespace>
     <PackageLicenseFile>License.md</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Title>DomainEvents</Title>
+    <Authors>najaf.shayk</Authors>
+    <Company>Ninja.Sha!4H</Company>
+    <Product>DomainEvents</Product>
+    <Description>Library to offer transactional events in domain model.</Description>
+    <Copyright>2022</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/NinjaRocks/Ninja.DomainEvents</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Domain-events; domain events; .net 6.0; </PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\..\License.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
