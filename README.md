@@ -24,7 +24,7 @@ public class CustomerCreated : IDomainEvent {
   var @event = new CustomerCreated { Name = "Ninja Sha!4h" };
   await _Publisher.RaiseAsync(@event);
 ```
-> 3. Subscribe - To listen to a domain event, implement `IHandler<T>` interface where T is the event type.
+> 3. Subscribe - To listen to a domain event, implement `IHandler<T>` interface where T is the event type you indend to handle.
 ```
 public class CustomerCreatedHandler : IHandler<CustomerCreated>
 {
@@ -41,6 +41,7 @@ public void ConfigureServices(IServiceCollection services)
 {   
     // register publisher with required lifetime.
     services.AddTransient<IPublisher, Publisher>();
+    
     // register all implemented event handlers.
     services.AddTransient<IHandler, CustomerCreatedHandler>();
     services.AddTransient<IHandler, OrderReceivedHandler>();
