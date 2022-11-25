@@ -1,6 +1,7 @@
 using DomainEvents.Impl;
 using DomainEvents.Tests.Events;
 using DomainEvents.Tests.Handlers;
+using NUnit.Framework;
 
 namespace DomainEvents.Tests.Run
 {

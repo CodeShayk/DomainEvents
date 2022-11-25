@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Ninja.DomainEvents\DomainEvents\DomainEvents.csproj" />
+    <ProjectReference Include="..\..\src\DomainEvents\DomainEvents.csproj" />
   </ItemGroup>
 
 </Project>

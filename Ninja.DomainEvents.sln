@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{74CA7BA5-40E8-4A21-BE60-3DF06A5CC1C2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{EF6AD11C-5146-4A67-89B2-A39CA01BD6FE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainEvents", "src\DomainEvents\DomainEvents.csproj", "{5A31FF1D-1363-4E40-A259-B1B6D1FAC9CD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainEvents.Tests", "test\DomainEvents.Tests\DomainEvents.Tests.csproj", "{23CC3400-94C1-475E-B9DE-026ED5195D62}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".misc", ".misc", "{D4BE57FE-11E1-4979-8145-F10C02CBC285}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{FA9A86C9-07AD-4D6F-958B-8EBE227F8765}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\linter.yml = .github\workflows\linter.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A31FF1D-1363-4E40-A259-B1B6D1FAC9CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A31FF1D-1363-4E40-A259-B1B6D1FAC9CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A31FF1D-1363-4E40-A259-B1B6D1FAC9CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A31FF1D-1363-4E40-A259-B1B6D1FAC9CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23CC3400-94C1-475E-B9DE-026ED5195D62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23CC3400-94C1-475E-B9DE-026ED5195D62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23CC3400-94C1-475E-B9DE-026ED5195D62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23CC3400-94C1-475E-B9DE-026ED5195D62}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5A31FF1D-1363-4E40-A259-B1B6D1FAC9CD} = {74CA7BA5-40E8-4A21-BE60-3DF06A5CC1C2}
+		{23CC3400-94C1-475E-B9DE-026ED5195D62} = {EF6AD11C-5146-4A67-89B2-A39CA01BD6FE}
+		{FA9A86C9-07AD-4D6F-958B-8EBE227F8765} = {D4BE57FE-11E1-4979-8145-F10C02CBC285}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5BD6BADD-7A5B-45C3-B20F-97280CD1CFD4}
+	EndGlobalSection
+EndGlobal
