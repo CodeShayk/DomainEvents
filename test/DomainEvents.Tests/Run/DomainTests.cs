@@ -15,7 +15,7 @@ namespace DomainEvents.Tests.Run
         {
             _HandlerResult = new Dictionary<IDomainEvent, Type>();
             _Publisher = new Publisher(new Resolver(
-                new List<IHandle> { new CustomerCreatedHandler(_HandlerResult),
+                new List<IHandler> { new CustomerCreatedHandler(_HandlerResult),
                 new OrderReceivedHandler(_HandlerResult) })
              );
         }

@@ -2,7 +2,7 @@
 
 namespace DomainEvents.Tests.Handlers
 {
-    public class OrderReceivedHandler : IHandle<OrderReceived>
+    public class OrderReceivedHandler : IHandler<OrderReceived>
     {
         private readonly Dictionary<IDomainEvent, Type> _HandlerResult;
 

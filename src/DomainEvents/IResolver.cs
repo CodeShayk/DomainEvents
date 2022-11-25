@@ -5,6 +5,6 @@
     /// </summary>
     public interface IResolver
     {
-        Task<IEnumerable<IHandle<T>>> ResolveAsync<T>() where T : IDomainEvent;
+        Task<IEnumerable<IHandler<T>>> ResolveAsync<T>() where T : IDomainEvent;
     }
 }

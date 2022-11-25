@@ -21,7 +21,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/NinjaRocks/Ninja.DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Domain-events; domain events; .net 6.0; </PackageTags>
+    <PackageTags>domain-events; domain events; .net6.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

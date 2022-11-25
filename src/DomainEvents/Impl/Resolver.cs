@@ -5,16 +5,16 @@
     /// </summary>
     public sealed class Resolver : IResolver
     {
-        private readonly IEnumerable<IHandle> _Handlers;
+        private readonly IEnumerable<IHandler> _Handlers;
 
-        public Resolver(IEnumerable<IHandle> handlers)
+        public Resolver(IEnumerable<IHandler> handlers)
         {
             _Handlers = handlers;
         }
 
-        public Task<IEnumerable<IHandle<T>>> ResolveAsync<T>() where T : IDomainEvent
+        public Task<IEnumerable<IHandler<T>>> ResolveAsync<T>() where T : IDomainEvent
         {
-            var handlers = _Handlers.Where(t => typeof(IHandle<T>).IsAssignableFrom(t.GetType())).Cast<IHandle<T>>();
+            var handlers = _Handlers.Where(t => typeof(IHandler<T>).IsAssignableFrom(t.GetType())).Cast<IHandler<T>>();
             return Task.FromResult(handlers);
         }
     }

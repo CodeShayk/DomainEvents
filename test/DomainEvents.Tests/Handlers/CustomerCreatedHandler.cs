@@ -2,7 +2,7 @@
 
 namespace DomainEvents.Tests.Handlers
 {
-    public class CustomerCreatedHandler : IHandle<CustomerCreated>
+    public class CustomerCreatedHandler : IHandler<CustomerCreated>
     {
         private readonly Dictionary<IDomainEvent, Type> _HandlerResult;
 
