@@ -1,2 +1,2 @@
-# Ninja.DomainEvents
+# Ninja.DomainEvents [![.NET](https://github.com/NinjaRocks/Ninja.DomainEvents/actions/workflows/build.yml/badge.svg)](https://github.com/NinjaRocks/Ninja.DomainEvents/actions/workflows/build.yml) [![Lint Code Base](https://github.com/NinjaRocks/Ninja.DomainEvents/actions/workflows/linter.yml/badge.svg)](https://github.com/NinjaRocks/Ninja.DomainEvents/actions/workflows/linter.yml)
 Library to offer transactional events in domain model.
