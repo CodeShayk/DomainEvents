@@ -1,0 +1,22 @@
+{
+
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/main/src/NerdBank.GitVersioning/version.schema.json",
+  "cloudBuild": {
+    "setVersionVariables": true,
+    "buildNumber": {
+      "enabled": false,
+      "includeCommitId": {
+        "when": "nonPublicReleaseOnly",
+        "where": "buildMetadata"
+      }
+    }
+  },
+  "release": {
+    "branchName": "master",
+    "versionIncrement": "minor",
+    "firstUnstableTag": "alpha"
+  },
+  "inherit": false,
+  "publicReleaseRefSpec": [ "^refs/heads/master$" ],
+  "version": "1.0.1"
+}

@@ -1,0 +1,116 @@
+name: CI
+'on':
+  create:
+    branches:
+      - release/**
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+      - pre-release
+      - dev/**
+    paths-ignore:
+    - "**/*.md"
+    - "**/*.gitignore"
+    - "**/*.gitattributes"
+jobs:
+  Run-Lint:
+    runs-on: ubuntu-latest
+    env:
+      github-token: '${{ secrets.GH_Packages }}'
+    steps:
+      - name: Step-01 Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Step-02 Lint Code Base
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          FILTER_REGEX_INCLUDE: .*src/.*
+          DEFAULT_BRANCH: master
+          GITHUB_TOKEN: '${{ env.github-token }}'
+  Run-Build:
+    runs-on: ubuntu-latest
+
+    env:
+      working-directory: /home/runner/work/DomainEvents/DomainEvents
+
+    steps:
+      - name: Step-01 Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.7
+        with:
+          versionSpec: 5.x
+
+      - name: Step-02 Check out Code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Step-03 Calculate Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v0.9.7
+        with:
+          useConfigFile: true
+
+      - name: Step-04 Install .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Step-05 Restore dependencies
+        run: dotnet restore
+        working-directory: '${{ env.working-directory }}'
+
+      - name: Step-06 Build Solution
+        run: dotnet build  --configuration Release --no-restore -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }}
+        working-directory: '${{ env.working-directory }}'
+
+      - name: Step-07 Test Solution
+        run: dotnet test --no-restore --verbosity normal
+        working-directory: '${{ env.working-directory }}'
+
+      - name: step-08 Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact
+          path: ${{env.working-directory}}
+          retention-days: 1
+
+  Package:
+    needs: [run-build, run-lint]
+    runs-on: ubuntu-latest
+    env:
+      github-token: '${{ secrets.GH_Packages }}'
+      working-directory: /home/runner/work/DomainEvents/DomainEvents
+    steps:
+      - name: Step-01 Retrieve Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifact
+          path: ${{env.working-directory}}
+          
+      - name: Step-02 Install Github Packages
+        run: dotnet tool install gpr --global
+
+      - name: Step-03 Publish to Github Packages
+        run: find -name "*.nupkg" -print -exec gpr push -k ${{env.github-token}} {} \;
+
+  Release:
+    if: 'startsWith(github.ref, ''refs/heads/release'')'
+    needs: [package]
+    runs-on: ubuntu-latest
+    env:
+      nuget-token: '${{ secrets.NUGET_API_KEY }}'      
+      working-directory: /home/runner/work/DomainEvents/DomainEvents
+    steps:
+      - name: Step-01 Retrieve Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifact
+          path: ${{env.working-directory}}
+
+      - name: Step-02 Release to Nuget
+        run: dotnet nuget push ${{env.working-directory}}/src/DomainEvents/bin/Release/*.nupkg --skip-duplicate --api-key ${{ env.nuget-token }} --source https://api.nuget.org/v3/index.json
