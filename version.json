@@ -18,5 +18,5 @@
   },
   "inherit": false,
   "publicReleaseRefSpec": [ "^refs/heads/master$" ],
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
