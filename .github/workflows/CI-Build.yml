@@ -146,7 +146,7 @@ jobs:
       - name: Step-03 Publish to Github Packages
         run: find -name "*.nupkg" -print -exec gpr push -k ${{env.github-token}} {} \;
   Release:
-    if: startsWith(github.head_ref, 'release/')
+    if:  ${{ startsWith(github.head_ref, 'release/')}}
     needs: [Package-Artifacts]
     runs-on: ubuntu-latest
     env:
