@@ -7,7 +7,8 @@ branches:
   release:
     regex: ^release$
   develop:
-    regex: ^develop$
+    regex: ^develop$|^dev$
+    tag: beta
   pull-request:
     tag: beta
 ignore:
