@@ -129,7 +129,7 @@ jobs:
       (needs.Build-Beta.result == 'success' || needs.Build-Release.result == 'success')
     runs-on: ubuntu-latest
     outputs:
-      semVersion: ${{ needs.run-build.outputs.semVersion }}
+      semVersion: ${{ needs.Build-Release.outputs.semVersion }}
     env:
       github-token: '${{ secrets.GH_Packages }}'
       working-directory: /home/runner/work/DomainEvents/DomainEvents
