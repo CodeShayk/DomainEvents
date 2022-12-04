@@ -148,7 +148,7 @@ jobs:
 
   Release:
     needs: [Package-Artifacts]
-    if:  ${{ startsWith(github.head_ref, 'release/') && needs.Package-Artifacts.result == 'success' }}
+    if:  startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     env:
       nuget-token: '${{ secrets.NUGET_API_KEY }}'      
@@ -159,6 +159,15 @@ jobs:
         with:
           name: build-artifact
           path: ${{env.working-directory}}
+
+      - name: Step-02 Create Github Release
+        run: |
+            curl \
+            -X POST \
+            -H "Accept:application/vnd.github+json" \
+            -H "Authorization:token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/ninjarocks/DomainEvents/releases \
+            -d '{"tag_name":v${{ needs.Package-Artifacts.outputs.semVersion }},"target_commitish":"master","name":"DomainEvents","body":"Relese version ${{ needs.Package.outputs.semVersion }}","draft":false,"prerelease":false,"generate_release_notes":false}'
 
       - name: Step-03 Publish to Nuget Org
         run: dotnet nuget push ${{env.working-directory}}/src/DomainEvents/bin/Release/*.nupkg --skip-duplicate --api-key ${{ env.nuget-token }} --source https://api.nuget.org/v3/index.json
