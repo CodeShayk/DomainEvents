@@ -20,13 +20,13 @@
     <Authors>ninja.shayk</Authors>
     <Company>Ninja Corp</Company>
     <Product>DomainEvents</Product>
-    <Description>Library to offer transactional events in domain model.</Description>
+    <Description>.Net Library to implement transactional events in domain model.</Description>
     <Copyright>Copyright (c) 2022 Ninja Sha!4H</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/NinjaRocks/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>domain-events; domain events; .net6.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <PackageIcon>ninja-icon-16.png</PackageIcon>
   </PropertyGroup>
 
