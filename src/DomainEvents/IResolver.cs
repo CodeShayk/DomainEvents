@@ -1,4 +1,7 @@
-﻿namespace DomainEvents
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace DomainEvents
 {
     /// <summary>
     /// Implement Resolver to return all the handlers implemented for domain event type T

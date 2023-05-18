@@ -1,4 +1,7 @@
-﻿namespace DomainEvents.Impl
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace DomainEvents.Impl
 {
     /// <summary>
     /// Publisher for domain event.

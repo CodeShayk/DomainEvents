@@ -1,15 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GeneratedAssemblyInfoFile>AssemblyInfo.cs</GeneratedAssemblyInfoFile>
     <PackRelease>true</PackRelease>
     <IsPackable>true</IsPackable>
-    <IncludeSymbols>True</IncludeSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
     <PackageId>Dormito.DomainEvents</PackageId>
     <AssemblyName>Dormito</AssemblyName>
     <RootNamespace>DomainEvents</RootNamespace>
@@ -17,19 +17,24 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Title>DomainEvents</Title>
-    <Authors>najaf.shayk</Authors>
-    <Company>Ninja.Sha!4H</Company>
+    <Authors>ninja.shayk</Authors>
+    <Company>Ninja Corp</Company>
     <Product>DomainEvents</Product>
     <Description>Library to offer transactional events in domain model.</Description>
-    <Copyright>2022</Copyright>
+    <Copyright>Copyright (c) 2022 Ninja Sha!4H</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/NinjaRocks/Ninja.DomainEvents</RepositoryUrl>
+    <RepositoryUrl>https://github.com/NinjaRocks/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>domain-events; domain events; .net6.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
-    <Version>1.0.0</Version>
+    <Version>1.0.5</Version>
+    <PackageIcon>ninja-icon-16.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\ninja-icon-16.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\..\License.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
