@@ -1,4 +1,4 @@
-# DomainEvents v1.0.5
+# <img src="https://github.com/NinjaRocks/DomainEvents/blob/master/ninja-icon-16.png" alt="ninja" style="width:30px;"/> DomainEvents v1.0.5
 [![NuGet version](https://badge.fury.io/nu/Dormito.DomainEvents.svg)](https://badge.fury.io/nu/Dormito.DomainEvents) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NinjaRocks/DomainEvents/blob/master/License.md) [![CI](https://github.com/NinjaRocks/DomainEvents/actions/workflows/CI-Build.yml/badge.svg)](https://github.com/NinjaRocks/DomainEvents/actions/workflows/CI-Build.yml) [![GitHub Release](https://img.shields.io/github/v/release/ninjarocks/DomainEvents?logo=github&sort=semver)](https://github.com/ninjarocks/DomainEvents/releases/latest)
 [![CodeQL](https://github.com/NinjaRocks/DomainEvents/actions/workflows/codeql.yml/badge.svg)](https://github.com/NinjaRocks/DomainEvents/actions/workflows/codeql.yml) [![.Net Stardard](https://img.shields.io/badge/.Net%20Standard-2.1-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/2.1)
 ## Library to help implement transactional events in domain bounded context.
