@@ -22,8 +22,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".misc", ".misc", "{D4BE57FE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{FA9A86C9-07AD-4D6F-958B-8EBE227F8765}"
 	ProjectSection(SolutionItems) = preProject
-		GitVersion.yml = GitVersion.yml
 		.github\workflows\CI-Build.yml = .github\workflows\CI-Build.yml
+		.github\workflows\codeql.yml = .github\workflows\codeql.yml
+		GitVersion.yml = GitVersion.yml
 	EndProjectSection
 EndProject
 Global
