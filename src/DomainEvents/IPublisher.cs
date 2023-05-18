@@ -1,4 +1,6 @@
-﻿namespace DomainEvents
+using System.Threading.Tasks;
+
+namespace DomainEvents
 {
     /// <summary>
     /// Implement domain event publisher.

@@ -1,4 +1,6 @@
-﻿namespace DomainEvents
+using System.Threading.Tasks;
+
+namespace DomainEvents
 {
     /// <summary>
     /// Interface to implement domain event handler.
