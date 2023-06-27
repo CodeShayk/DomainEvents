@@ -1,6 +1,6 @@
-# <img src="https://github.com/NinjaRocks/DomainEvents/blob/master/ninja-icon-16.png" alt="ninja" style="width:30px;"/> DomainEvents v1.0.6
+# <img src="https://github.com/NinjaRocks/DomainEvents/blob/master/ninja-icon-16.png" alt="ninja" style="width:30px;"/> DomainEvents v2.0.0
 [![NuGet version](https://badge.fury.io/nu/Dormito.DomainEvents.svg)](https://badge.fury.io/nu/Dormito.DomainEvents) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/NinjaRocks/DomainEvents/blob/master/License.md) [![CI](https://github.com/NinjaRocks/DomainEvents/actions/workflows/CI-Build.yml/badge.svg)](https://github.com/NinjaRocks/DomainEvents/actions/workflows/CI-Build.yml) [![GitHub Release](https://img.shields.io/github/v/release/ninjarocks/DomainEvents?logo=github&sort=semver)](https://github.com/ninjarocks/DomainEvents/releases/latest)
-[![CodeQL](https://github.com/NinjaRocks/DomainEvents/actions/workflows/codeql.yml/badge.svg)](https://github.com/NinjaRocks/DomainEvents/actions/workflows/codeql.yml) [![.Net Stardard](https://img.shields.io/badge/.Net%20Standard-2.1-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/2.1)
+[![CodeQL](https://github.com/NinjaRocks/DomainEvents/actions/workflows/codeql.yml/badge.svg)](https://github.com/NinjaRocks/DomainEvents/actions/workflows/codeql.yml) [![.Net 6.0](https://img.shields.io/badge/.Net%20-6.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/6)
 ## Library to help implement transactional events in domain bounded context.
 Use domain events to explicitly implement side effects of changes within your domain. In other words, and using DDD terminology, use domain events to explicitly implement side effects across multiple aggregates. 
 ### What is a Domain Event?
