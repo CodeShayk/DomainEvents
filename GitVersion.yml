@@ -1,4 +1,4 @@
-next-version: 1.0.6
+next-version: 2.0.0
 tag-prefix: '[vV]'
 mode: ContinuousDeployment
 branches:

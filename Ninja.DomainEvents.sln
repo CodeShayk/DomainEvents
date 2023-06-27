@@ -14,6 +14,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".misc", ".misc", "{D4BE57FE-11E1-4979-8145-F10C02CBC285}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		GitVersion.yml = GitVersion.yml
 		License.md = License.md
 		nuget.config = nuget.config
 		README.md = README.md
@@ -23,8 +24,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{FA9A86C9-07AD-4D6F-958B-8EBE227F8765}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\CI-Build.yml = .github\workflows\CI-Build.yml
-		.github\workflows\codeql.yml = .github\workflows\codeql.yml
-		GitVersion.yml = GitVersion.yml
 	EndProjectSection
 EndProject
 Global
