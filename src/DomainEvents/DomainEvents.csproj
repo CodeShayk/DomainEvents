@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -25,8 +25,8 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/TechNinjaLabs/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>domain-events; domain events; .net8.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
-    <Version>3.0.1</Version>
+    <PackageTags>domain-events; domain events; .net9.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
+    <Version>4.0.0</Version>
     <PackageIcon>ninja-icon-16.png</PackageIcon>
   </PropertyGroup>
 
