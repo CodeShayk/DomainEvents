@@ -16,18 +16,22 @@
     <PackageLicenseFile>License.md</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Title>Dormito.DomainEvents</Title>
-    <Authors>Tech Ninja Labs</Authors>
-    <Company>Tech Ninja Labs</Company>
-    <Product>Dormito</Product>
+    <Title>DomainEvents</Title>
+    <Authors>Code Shayk</Authors>
+    <Company>Code Shayk</Company>
+    <Product>DomainEvents</Product>
     <Description>.Net Library to implement transactional events in domain model.</Description>
-    <Copyright>Copyright (c) 2024 Tech Ninja Labs</Copyright>
+    <Copyright>Copyright (c) 2024 Code Shayk</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/TechNinjaLabs/DomainEvents</RepositoryUrl>
+    <RepositoryUrl>https://github.com/NinjaRocks/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>domain-events; domain events; .net9.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
     <Version>4.0.0</Version>
     <PackageIcon>ninja-icon-16.png</PackageIcon>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageProjectUrl>https://github.com/CodeShayk/DomainEvents/wiki</PackageProjectUrl>
+    <PackageReleaseNotes>Release v4.0.0
+- Targets .Net 9.0</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
