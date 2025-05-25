@@ -13,7 +13,7 @@ jobs:
       github-token: '${{ secrets.GH_Packages }}'
     steps:
       - name: Step-01 Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Step-02 Lint Code Base
@@ -39,7 +39,7 @@ jobs:
           versionSpec: 5.x
 
       - name: Step-02 Check out Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -67,7 +67,7 @@ jobs:
         working-directory: '${{ env.working-directory }}'
 
       - name: Step-08 Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: ${{env.working-directory}}
@@ -88,7 +88,7 @@ jobs:
           versionSpec: 5.x
 
       - name: Step-02 Check out Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -117,7 +117,7 @@ jobs:
         working-directory: '${{ env.working-directory }}'
 
       - name: Step-08 Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: ${{env.working-directory}}
@@ -135,7 +135,7 @@ jobs:
       working-directory: /home/runner/work/DomainEvents/DomainEvents
     steps:
       - name: Step-01 Retrieve Build Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-artifact
           path: ${{env.working-directory}}
