@@ -9,11 +9,12 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-name: "CodeQL"
+name: "master-codeQL"
 
 on:
-  pull_request:
-    types: [opened, reopened, edited, synchronize]
+  push:
+    branches:
+    - master
     paths-ignore:
     - "**/*.md"
     - "**/*.gitignore"
