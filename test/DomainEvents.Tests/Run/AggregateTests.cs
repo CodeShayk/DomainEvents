@@ -29,9 +29,11 @@ namespace DomainEvents.Tests.Run
             };
             
             var services = new ServiceCollection();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
             services.AddSingleton<IPublisher, Publisher>();
             services.AddSingleton<IResolver>(_ => new Resolver(handlers));
-            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>()));
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            services.AddSingleton<IEventListener>(sp => new EventListener(sp.GetRequiredService<IEventQueue>(), sp.GetRequiredService<IResolver>()));
             services.AddSingleton<IEventInterceptor, EventInterceptor>();
             services.AddSingleton<IAggregateFactory, AggregateFactory>();
             

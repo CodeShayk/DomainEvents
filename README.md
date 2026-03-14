@@ -19,17 +19,130 @@ The domain events and their side effects (the actions triggered afterwards that 
 
 It's important to ensure that, just like a database transaction, either all the operations related to a domain event finish successfully or none of them do.
 
-Figure below shows how consistency between aggregates is achieved by domain events. When the user initiates an order, the `Order Aggregate` sends an `OrderStarted` domain event. The OrderStarted domain event is handled by the `Buyer Aggregate` to create a Buyer object in the ordering microservice (bounded context). Please read [Domain Events](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation) for more details.
+---
 
-![image](https://user-images.githubusercontent.com/6259981/204060193-d2f5241e-c1d2-46ab-a16d-1c3047bc151b.png)
+## Architecture Flow
+
+```
+Aggregate -> Interceptor -> Middleware -> Dispatcher -> Queue <- Listener -> Middleware -> Resolver -> Handler
+```
+
+### Components:
+
+1. **Aggregate** - Domain aggregate that raises events
+2. **Interceptor** - Castle DynamicProxy interceptor (standard, with telemetry)
+3. **Middleware** - Custom plugins that run before/after dispatch and handling
+4. **Dispatcher** - Dispatches events to handlers (customizable)
+5. **Queue** - In-flight non-persistent queue for events (optional)
+6. **Listener** - Listens to queue and triggers handling
+7. **Resolver** - Resolves handlers for events
+8. **Handler** - Handles the events
 
 ---
 
 ## v5.x - New Features
 
-### 1. Async Handler Interface (IHandler<T>)
+### 1. Event Middleware
 
-The library now uses async handlers with `IHandler<T>` interface:
+Custom plugins that run at various points in the event pipeline:
+
+```csharp
+public class MyMiddleware : IEventMiddleware
+{
+    public Task<bool> OnDispatchingAsync(EventContext context)
+    {
+        // Runs before event is dispatched
+        Console.WriteLine($"Before dispatch: {context.EventType.Name}");
+        return Task.FromResult(true); // Return false to skip
+    }
+
+    public Task OnDispatchedAsync(EventContext context)
+    {
+        // Runs after event is dispatched
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> OnHandlingAsync(EventContext context)
+    {
+        // Runs before each handler processes the event
+        return Task.FromResult(true);
+    }
+
+    public Task OnHandledAsync(EventContext context)
+    {
+        // Runs after each handler processes the event
+        return Task.CompletedTask;
+    }
+}
+```
+
+Register middleware:
+
+```csharp
+services.AddDomainEvents(assembly);
+services.AddSingleton<IEventMiddleware, MyMiddleware>();
+```
+
+### 2. Event Queue
+
+In-flight non-persistent queue for events:
+
+```csharp
+// Use default in-memory queue
+services.AddDomainEvents(assembly);
+
+// Or use custom queue
+services.AddSingleton<IEventQueue, MyCustomQueue>();
+```
+
+Process queue:
+
+```csharp
+var dispatcher = serviceProvider.GetRequiredService<IEventDispatcher>();
+await dispatcher.ProcessQueueAsync();
+```
+
+### 3. Custom Dispatcher
+
+Customize how events are dispatched:
+
+```csharp
+public class MyCustomDispatcher : IEventDispatcher
+{
+    private readonly IEventDispatcher _innerDispatcher;
+    
+    public MyCustomDispatcher(IEventDispatcher innerDispatcher)
+    {
+        _innerDispatcher = innerDispatcher;
+    }
+    
+    public void Dispatch(object @event)
+    {
+        // Custom logic
+        _innerDispatcher.Dispatch(@event);
+    }
+    
+    public Task DispatchAsync(object @event)
+    {
+        Dispatch(@event);
+        return Task.CompletedTask;
+    }
+}
+```
+
+**Registration:**
+```csharp
+services.AddDomainEventsWithDispatcher<MyCustomDispatcher>(assembly);
+```
+
+### 4. Standard EventInterceptor with Telemetry
+
+The `EventInterceptor` provides standard interception with:
+- OpenTelemetry activity tracking
+- Logging
+- Error handling
+
+### 5. Async Handler Interface (IHandler<T>)
 
 ```csharp
 public class CustomerCreatedHandler : IHandler<CustomerCreated>
@@ -40,228 +153,41 @@ public class CustomerCreatedHandler : IHandler<CustomerCreated>
         return Task.CompletedTask;
     }
 }
-```
-
-### 2. Custom Dispatcher Support
-
-You can now provide your own custom dispatcher to customize how events are dispatched to handlers. The standard EventInterceptor with telemetry remains unchanged.
-
-```csharp
-public class MyCustomDispatcher : IEventDispatcher
-{
-    public void Dispatch(object @event)
-    {
-        // Custom dispatch logic
-        Console.WriteLine($"Dispatching event: {@event.GetType().Name}");
-        
-        // Resolve handlers and dispatch
-        // ...
-    }
-
-    public Task DispatchAsync(object @event)
-    {
-        Dispatch(@event);
-        return Task.CompletedTask;
-    }
-}
-```
-
-Register with DI:
-
-```csharp
-// Using type
-services.AddDomainEventsWithDispatcher<MyCustomDispatcher>(assembly);
-
-// Using instance
-services.AddDomainEventsWithDispatcher(new MyCustomDispatcher(), assembly);
-```
-
-### 3. Standard EventInterceptor with Telemetry
-
-The `EventInterceptor` provides standard interception with built-in telemetry:
-
-- OpenTelemetry activity tracking
-- Logging of event dispatching
-- Error handling and reporting
-
-The interceptor is automatically registered and should not be customized.
-
-### 4. Aggregate Base Class
-
-The library provides an `Aggregate` base class that can raise and handle domain events:
-
-```csharp
-public class CustomerAggregate : Aggregate
-{
-    public void RegisterCustomer(string name)
-    {
-        var @event = new CustomerCreated { Name = name };
-        Raise(@event);  // Automatically intercepted and dispatched
-    }
-}
-
-public class WarehouseAggregate : Aggregate, IHandler<OrderReceived>
-{
-    public Task HandleAsync(OrderReceived @event)
-    {
-        Console.WriteLine($"Warehouse received order: {@event.OrderNo}");
-        return Task.CompletedTask;
-    }
-
-    public void ProcessOrder(string orderNo)
-    {
-        Raise(new OrderReceived { OrderNo = orderNo });
-    }
-}
-```
-
-### 5. Microsoft.Extensions.DependencyInjection Integration
-
-Automatically scan assemblies and register all event handlers:
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    // Auto-scan assemblies for IHandler implementations
-    services.AddDomainEvents(typeof(MyHandler).Assembly);
-}
-```
-
-### 6. Castle DynamicProxy Interception
-
-Use the `IAggregateFactory` to create proxied aggregates with automatic event interception:
-
-```csharp
-// Register in DI
-services.AddDomainEvents(assembly);
-services.AddSingleton<IAggregateFactory, AggregateFactory>();
-
-// Usage
-var factory = serviceProvider.GetRequiredService<IAggregateFactory>();
-var customer = await factory.CreateAsync<CustomerAggregate>();
-customer.RegisterCustomer("John Doe");  // Automatically intercepted
 ```
 
 ---
 
 ## Usage Patterns
 
-### Pattern 1: Traditional Publisher/Handler
-
-1. **Define Event** - Derive from `IDomainEvent`:
+### Pattern 1: Basic Usage
 
 ```csharp
-public class CustomerCreated : IDomainEvent
-{
-    public string Name { get; set; }
-}
+services.AddDomainEvents(typeof(CustomerCreatedHandler).Assembly);
 ```
 
-2. **Publish** - Inject `IPublisher` and call `RaiseAsync()`:
+### Pattern 2: With Custom Middleware
 
 ```csharp
-var @event = new CustomerCreated { Name = "John" };
-await _publisher.RaiseAsync(@event);
+services.AddDomainEvents(assembly);
+services.AddSingleton<IEventMiddleware, LoggingMiddleware>();
+services.AddSingleton<IEventMiddleware, MetricsMiddleware>();
 ```
 
-3. **Subscribe** - Implement `IHandler<T>` interface:
+### Pattern 3: With Custom Queue
 
 ```csharp
-public class CustomerCreatedHandler : IHandler<CustomerCreated>
-{
-    public Task HandleAsync(CustomerCreated @event)
-    {
-        Console.WriteLine($"Customer created: {@event.Name}");
-        return Task.CompletedTask;
-    }
-}
+services.AddDomainEvents(assembly);
+services.AddSingleton<IEventQueue, MyCustomQueue>();
+
+// Process events from queue
+var dispatcher = serviceProvider.GetRequiredService<IEventDispatcher>();
+await dispatcher.ProcessQueueAsync();
 ```
 
-4. **Auto-Register with DI**:
+### Pattern 4: With Custom Dispatcher
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    services.AddDomainEvents(typeof(CustomerCreatedHandler).Assembly);
-}
-```
-
-### Pattern 2: Aggregate-Based with Auto-Registration
-
-1. **Define Event**:
-
-```csharp
-public class OrderCreated : IDomainEvent
-{
-    public string OrderId { get; set; }
-}
-```
-
-2. **Create Aggregate**:
-
-```csharp
-public class OrderAggregate : Aggregate
-{
-    public void CreateOrder(string customerId)
-    {
-        Raise(new OrderCreated { OrderId = Guid.NewGuid().ToString() });
-    }
-}
-```
-
-3. **Create Handler (Aggregate that handles events)**:
-
-```csharp
-public class InventoryAggregate : Aggregate, IHandler<OrderCreated>
-{
-    public Task HandleAsync(OrderCreated @event)
-    {
-        Console.WriteLine($"Reserving inventory for order: {@event.OrderId}");
-        return Task.CompletedTask;
-    }
-}
-```
-
-4. **Auto-Register with DI**:
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    services.AddDomainEvents(typeof(OrderCreated).Assembly);
-}
-```
-
-### Pattern 3: Custom Dispatcher
-
-To add custom dispatch logic (e.g., logging, filtering, transformations):
-
-```csharp
-public class LoggingDispatcher : IEventDispatcher
-{
-    private readonly IEventDispatcher _innerDispatcher;
-    private readonly ILogger<LoggingDispatcher> _logger;
-
-    public LoggingDispatcher(IEventDispatcher innerDispatcher, ILogger<LoggingDispatcher> logger)
-    {
-        _innerDispatcher = innerDispatcher;
-        _logger = logger;
-    }
-
-    public void Dispatch(object @event)
-    {
-        _logger.LogInformation("Dispatching event: {EventType}", @event.GetType().Name);
-        _innerDispatcher.Dispatch(@event);
-    }
-
-    public Task DispatchAsync(object @event)
-    {
-        Dispatch(@event);
-        return Task.CompletedTask;
-    }
-}
-
-// Register
-services.AddDomainEventsWithDispatcher<LoggingDispatcher>(assembly);
+services.AddDomainEventsWithDispatcher<MyCustomDispatcher>(assembly);
 ```
 
 ---
@@ -271,27 +197,32 @@ services.AddDomainEventsWithDispatcher<LoggingDispatcher>(assembly);
 | Interface | Purpose |
 |-----------|---------|
 | `IDomainEvent` | Marker interface for domain events |
-| `IHandler<TEvent>` | Async handler interface for specific event types |
+| `IHandler<TEvent>` | Async handler interface |
 | `IHandler` | Marker interface for handlers |
-| `IPublisher` | Interface for raising/publishing domain events |
-| `IResolver` | Interface for resolving handlers for a given event type |
-| `IEventInterceptor` | Interface for intercepting Raise/RaiseAsync calls (standard, with telemetry) |
-| `IEventDispatcher` | Interface for dispatching events to handlers (customizable) |
+| `IPublisher` | Interface for raising events |
+| `IResolver` | Interface for resolving handlers |
+| `IEventInterceptor` | Interceptor for Raise/RaiseAsync |
+| `IEventDispatcher` | Dispatches events to handlers |
+| `IEventMiddleware` | Plugin for event pipeline |
+| `IEventQueue` | In-flight event queue |
+| `IEventListener` | Queue listener |
 
 ## Implementation Classes
 
 | Class | Purpose |
 |-------|---------|
-| `Aggregate` | Base class for domain aggregates with Raise() method |
-| `Publisher` | Concrete implementation of `IPublisher` |
-| `Resolver` | Concrete implementation of `IResolver` |
-| `AggregateFactory` | Factory for creating proxied aggregate instances |
-| `EventInterceptor` | Default Castle DynamicProxy interceptor with telemetry |
-| `EventDispatcher` | Default implementation of `IEventDispatcher` |
+| `Aggregate` | Base class for domain aggregates |
+| `Publisher` | IPublisher implementation |
+| `Resolver` | IResolver implementation |
+| `AggregateFactory` | Creates proxied aggregates |
+| `EventInterceptor` | Default interceptor with telemetry |
+| `EventDispatcher` | Default dispatcher |
+| `InMemoryEventQueue` | Default in-memory queue |
+| `EventMiddlewareBase` | Base class for middleware |
+| `LoggingMiddleware` | Built-in logging middleware |
 
 ## Package Information
 
 - **Package ID**: `Dormito.DomainEvents`
 - **Target Frameworks**: netstandard2.0, netstandard2.1, net8.0, net9.0, net10.0
 - **License**: MIT
-- **Repository**: https://github.com/CodeShayk/DomainEvents

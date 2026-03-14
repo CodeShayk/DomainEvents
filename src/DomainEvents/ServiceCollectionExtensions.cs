@@ -28,6 +28,9 @@ namespace DomainEvents
                 throw new ArgumentException("At least one assembly must be specified", nameof(assemblies));
             }
 
+            // Register the event queue
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
+
             // Register the publisher
             services.AddSingleton<IPublisher, Publisher>();
 
@@ -42,16 +45,29 @@ namespace DomainEvents
             services.AddSingleton<IEventDispatcher>(sp =>
             {
                 var resolver = sp.GetRequiredService<IResolver>();
+                var queue = sp.GetRequiredService<IEventQueue>();
+                var middlewares = sp.GetServices<IEventMiddleware>();
                 var logger = sp.GetService<ILogger<EventDispatcher>>();
-                return new EventDispatcher(resolver, logger);
+                return new EventDispatcher(resolver, queue, middlewares, logger);
+            });
+
+            // Register EventListener to handle queue subscription
+            services.AddSingleton<IEventListener>(sp =>
+            {
+                var queue = sp.GetRequiredService<IEventQueue>();
+                var resolver = sp.GetRequiredService<IResolver>();
+                var middlewares = sp.GetServices<IEventMiddleware>();
+                var logger = sp.GetService<ILogger<EventListener>>();
+                return new EventListener(queue, resolver, middlewares, logger);
             });
 
             // Register the default event interceptor
             services.AddSingleton<IEventInterceptor>(sp =>
             {
                 var dispatcher = sp.GetRequiredService<IEventDispatcher>();
+                var listener = sp.GetRequiredService<IEventListener>(); // Required to trigger subscription
                 var logger = sp.GetService<ILogger<EventInterceptor>>();
-                return new EventInterceptor(dispatcher, logger);
+                return new EventInterceptor(dispatcher, listener, logger);
             });
 
             // Register the aggregate factory
@@ -63,12 +79,33 @@ namespace DomainEvents
                 var handlerTypes = assembly.GetTypes()
                     .Where(t => !t.IsAbstract && !t.IsInterface)
                     .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHandler<>)))
-                    .Where(t => t.GetConstructor(Type.EmptyTypes) != null); // Only parameterless constructors
+                    .Where(t => t.GetConstructor(Type.EmptyTypes) != null);
 
                 foreach (var handlerType in handlerTypes)
                 {
                     services.AddSingleton(typeof(IHandler), handlerType);
                     services.AddSingleton(handlerType);
+                }
+
+                // Auto-register IEventMiddleware implementations with parameterless constructors
+                var middlewareTypes = assembly.GetTypes()
+                    .Where(t => !t.IsAbstract && !t.IsInterface)
+                    .Where(t => typeof(IEventMiddleware).IsAssignableFrom(t))
+                    .Where(t => t.GetConstructor(Type.EmptyTypes) != null);
+
+                foreach (var middlewareType in middlewareTypes)
+                {
+                    bool isAlreadyRegistered = services.Any(s => 
+                        (s.ServiceType == typeof(IEventMiddleware) && 
+                            (s.ImplementationType == middlewareType || 
+                             (s.ImplementationInstance != null && s.ImplementationInstance.GetType() == middlewareType))) ||
+                        s.ServiceType == middlewareType);
+                    
+                    if (!isAlreadyRegistered)
+                    {
+                        services.AddSingleton(typeof(IEventMiddleware), middlewareType);
+                        services.AddSingleton(middlewareType);
+                    }
                 }
             }
 
@@ -149,6 +186,9 @@ namespace DomainEvents
         /// </summary>
         private static IServiceCollection AddDomainEventsCore(this IServiceCollection services, Assembly[] assemblies)
         {
+            // Register the event queue
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
+
             // Register the publisher
             services.AddSingleton<IPublisher, Publisher>();
 
@@ -174,6 +214,27 @@ namespace DomainEvents
                 {
                     services.AddSingleton(typeof(IHandler), handlerType);
                     services.AddSingleton(handlerType);
+                }
+
+                // Auto-register IEventMiddleware implementations with parameterless constructors
+                var middlewareTypes = assembly.GetTypes()
+                    .Where(t => !t.IsAbstract && !t.IsInterface)
+                    .Where(t => typeof(IEventMiddleware).IsAssignableFrom(t))
+                    .Where(t => t.GetConstructor(Type.EmptyTypes) != null);
+
+                foreach (var middlewareType in middlewareTypes)
+                {
+                    bool isAlreadyRegistered = services.Any(s => 
+                        (s.ServiceType == typeof(IEventMiddleware) && 
+                            (s.ImplementationType == middlewareType || 
+                             (s.ImplementationInstance != null && s.ImplementationInstance.GetType() == middlewareType))) ||
+                        s.ServiceType == middlewareType);
+                    
+                    if (!isAlreadyRegistered)
+                    {
+                        services.AddSingleton(typeof(IEventMiddleware), middlewareType);
+                        services.AddSingleton(middlewareType);
+                    }
                 }
             }
 

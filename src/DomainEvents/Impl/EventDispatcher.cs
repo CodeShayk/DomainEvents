@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DomainEvents.Impl;
 using Microsoft.Extensions.Logging;
@@ -10,151 +11,103 @@ namespace DomainEvents
 {
     /// <summary>
     /// Default implementation of IEventDispatcher that dispatches events to registered handlers.
+    /// Events are enqueued and the dispatcher completes immediately. Listeners process via queue subscription.
     /// </summary>
     public class EventDispatcher : IEventDispatcher
     {
         private readonly IResolver _resolver;
+        private readonly IEventQueue _queue;
+        private readonly IEnumerable<IEventMiddleware> _middlewares;
         private readonly ILogger<EventDispatcher> _logger;
 
-        public EventDispatcher(IResolver resolver, ILogger<EventDispatcher> logger = null)
+        public EventDispatcher(
+            IResolver resolver,
+            IEventQueue queue = null,
+            IEnumerable<IEventMiddleware> middlewares = null,
+            ILogger<EventDispatcher> logger = null)
         {
             _resolver = resolver;
+            _queue = queue ?? new InMemoryEventQueue();
+            _middlewares = middlewares ?? Enumerable.Empty<IEventMiddleware>();
             _logger = logger;
         }
+
+        public IEventQueue Queue => _queue;
 
         public void Dispatch(object @event)
         {
             if (@event == null) return;
 
-            var eventType = @event.GetType();
-            _logger?.LogDebug("Dispatching event {EventType}", eventType.Name);
-
-            if (!(_resolver is Resolver resolver))
-            {
-                _logger?.LogWarning("Resolver is not of type Resolver, cannot dispatch event");
-                return;
-            }
-
-            var handlers = resolver.ResolveAsync(eventType).GetAwaiter().GetResult();
-            var handlerList = handlers.ToList();
-
-            _logger?.LogDebug("Found {HandlerCount} handlers for event {EventType}", handlerList.Count, eventType.Name);
-
-            var exceptions = new List<Exception>();
-
-            foreach (var handler in handlerList)
-            {
-                var handlerType = handler.GetType();
-                
-                var activity = DomainEventsActivitySource.Source.StartActivity(
-                    DomainEventsActivitySource.HandleEventActivityName,
-                    ActivityKind.Internal);
-
-                if (activity != null)
-                {
-                    activity.SetTag(DomainEventsTags.EventType, eventType.Name);
-                    activity.SetTag(DomainEventsTags.HandlerType, handlerType.Name);
-                }
-
-                try
-                {
-                    var handlerInterfaceType = typeof(IHandler<>).MakeGenericType(eventType);
-                    var handleMethod = handlerInterfaceType.GetMethod("HandleAsync");
-                    handleMethod?.Invoke(handler, new[] { @event });
-                    if (activity != null)
-                    {
-                        activity.SetStatus(ActivityStatusCode.Ok);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Error in handler {HandlerType} for event {EventType}", 
-                        handlerType.Name, eventType.Name);
-                    if (activity != null)
-                    {
-                        activity.SetStatus(ActivityStatusCode.Error, ex.Message);
-                        activity.SetTag(DomainEventsTags.ErrorType, ex.GetType().FullName);
-                        activity.SetTag(DomainEventsTags.ErrorMessage, ex.Message);
-                    }
-                    exceptions.Add(ex);
-                }
-                finally
-                {
-                    activity?.Dispose();
-                }
-            }
-
-            if (exceptions.Count > 0)
-            {
-                throw new AggregateException($"Errors occurred while dispatching event {eventType.Name}", exceptions);
-            }
+            var context = new EventContext(@event);
+            
+            DispatchWithMiddlewareAsync(context).GetAwaiter().GetResult();
         }
 
         public async Task DispatchAsync(object @event)
         {
             if (@event == null) return;
 
-            var eventType = @event.GetType();
-            _logger?.LogDebug("Dispatching event async {EventType}", eventType.Name);
+            var context = new EventContext(@event);
+            await DispatchWithMiddlewareAsync(context);
+        }
 
-            if (!(_resolver is Resolver resolver))
+        private async Task DispatchWithMiddlewareAsync(EventContext context)
+        {
+            var eventType = context.EventType;
+            _logger?.LogDebug("Dispatching event {EventType}", eventType.Name);
+
+            var activity = DomainEventsActivitySource.Source.StartActivity(
+                DomainEventsActivitySource.PublishEventActivityName,
+                ActivityKind.Internal);
+
+            if (activity != null)
             {
-                _logger?.LogWarning("Resolver is not of type Resolver, cannot dispatch event");
-                return;
+                activity.SetTag(DomainEventsTags.EventType, eventType.Name);
             }
 
-            var handlers = await resolver.ResolveAsync(eventType);
-            var handlerList = handlers.ToList();
-
-            _logger?.LogDebug("Found {HandlerCount} handlers for event {EventType}", handlerList.Count, eventType.Name);
-
-            var exceptions = new List<Exception>();
-
-            foreach (var handler in handlerList)
+            try
             {
-                var handlerType = handler.GetType();
+                foreach (var middleware in _middlewares)
+                {
+                    if (!await middleware.OnDispatchingAsync(context))
+                    {
+                        _logger?.LogDebug("Middleware {Middleware} skipped dispatching for {EventType}", 
+                            middleware.GetType().Name, eventType.Name);
+                        return;
+                    }
+                }
 
-                var activity = DomainEventsActivitySource.Source.StartActivity(
-                    DomainEventsActivitySource.HandleEventActivityName,
-                    ActivityKind.Internal);
+                await _queue.EnqueueAsync(context);
+                _logger?.LogDebug("Event {EventType} enqueued", eventType.Name);
 
+                context.IsDispatched = true;
+                
+                foreach (var middleware in _middlewares)
+                {
+                    await middleware.OnDispatchedAsync(context);
+                }
+
+                _logger?.LogDebug("Successfully dispatched event {EventType}", eventType.Name);
+                
                 if (activity != null)
                 {
-                    activity.SetTag(DomainEventsTags.EventType, eventType.Name);
-                    activity.SetTag(DomainEventsTags.HandlerType, handlerType.Name);
-                }
-
-                try
-                {
-                    var handlerInterfaceType = typeof(IHandler<>).MakeGenericType(eventType);
-                    var handleMethod = handlerInterfaceType.GetMethod("HandleAsync");
-                    handleMethod?.Invoke(handler, new[] { @event });
-                    if (activity != null)
-                    {
-                        activity.SetStatus(ActivityStatusCode.Ok);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Error in handler {HandlerType} for event {EventType}", 
-                        handlerType.Name, eventType.Name);
-                    if (activity != null)
-                    {
-                        activity.SetStatus(ActivityStatusCode.Error, ex.Message);
-                        activity.SetTag(DomainEventsTags.ErrorType, ex.GetType().FullName);
-                        activity.SetTag(DomainEventsTags.ErrorMessage, ex.Message);
-                    }
-                    exceptions.Add(ex);
-                }
-                finally
-                {
-                    activity?.Dispose();
+                    activity.SetStatus(ActivityStatusCode.Ok);
                 }
             }
-
-            if (exceptions.Count > 0)
+            catch (Exception ex)
             {
-                throw new AggregateException($"Errors occurred while dispatching event {eventType.Name}", exceptions);
+                _logger?.LogError(ex, "Error dispatching event {EventType}", eventType.Name);
+                if (activity != null)
+                {
+                    activity.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    activity.SetTag(DomainEventsTags.ErrorType, ex.GetType().FullName);
+                    activity.SetTag(DomainEventsTags.ErrorMessage, ex.Message);
+                }
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
             }
         }
     }

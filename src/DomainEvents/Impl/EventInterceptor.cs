@@ -29,6 +29,14 @@ namespace DomainEvents.Impl
         }
 
         /// <summary>
+        /// Constructor that also resolves IEventListener to ensure subscription is registered.
+        /// </summary>
+        public EventInterceptor(IEventDispatcher dispatcher, IEventListener eventListener, ILogger<EventInterceptor> logger = null)
+            : this(dispatcher, logger)
+        {
+        }
+
+        /// <summary>
         /// Intercepts the Raise/RaiseAsync method call and dispatches the event to handlers.
         /// </summary>
         /// <param name="invocation">The method invocation.</param>

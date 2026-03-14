@@ -64,12 +64,14 @@ namespace DomainEvents.Tests.Run
             // Arrange
             var handlerResult = new Dictionary<IDomainEvent, Type>();
             var services = new ServiceCollection();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
             services.AddSingleton<IResolver>(_ =>
             {
                 var handlers = new List<IHandler> { new CustomerCreatedHandler(handlerResult) };
                 return new Resolver(handlers);
             });
-            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>()));
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            services.AddSingleton<IEventListener>(sp => new EventListener(sp.GetRequiredService<IEventQueue>(), sp.GetRequiredService<IResolver>()));
             services.AddSingleton<IEventInterceptor, EventInterceptor>();
             services.AddSingleton<IAggregateFactory, AggregateFactory>();
             var serviceProvider = services.BuildServiceProvider();
@@ -90,12 +92,14 @@ namespace DomainEvents.Tests.Run
             // Arrange
             var handlerResult = new Dictionary<IDomainEvent, Type>();
             var services = new ServiceCollection();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
             services.AddSingleton<IResolver>(_ =>
             {
                 var handlers = new List<IHandler> { new OrderReceivedHandler(handlerResult) };
                 return new Resolver(handlers);
             });
-            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>()));
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            services.AddSingleton<IEventListener>(sp => new EventListener(sp.GetRequiredService<IEventQueue>(), sp.GetRequiredService<IResolver>()));
             services.AddSingleton<IEventInterceptor, EventInterceptor>();
             services.AddSingleton<IAggregateFactory, AggregateFactory>();
             var serviceProvider = services.BuildServiceProvider();
@@ -103,7 +107,7 @@ namespace DomainEvents.Tests.Run
 
             // Act
             var warehouse = await factory.CreateAsync<WarehouseAggregate>();
-            warehouse.ProcessOrder("ORD-456");
+            warehouse.ProcessOrder("ORD-123");
 
             // Assert
             Assert.That(handlerResult.Count, Is.EqualTo(1));
@@ -116,6 +120,7 @@ namespace DomainEvents.Tests.Run
             // Arrange
             var handlerResult = new Dictionary<IDomainEvent, Type>();
             var services = new ServiceCollection();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
             services.AddSingleton<IResolver>(_ =>
             {
                 var handlers = new List<IHandler>
@@ -125,7 +130,8 @@ namespace DomainEvents.Tests.Run
                 };
                 return new Resolver(handlers);
             });
-            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>()));
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            services.AddSingleton<IEventListener>(sp => new EventListener(sp.GetRequiredService<IEventQueue>(), sp.GetRequiredService<IResolver>()));
             services.AddSingleton<IEventInterceptor, EventInterceptor>();
             services.AddSingleton<IAggregateFactory, AggregateFactory>();
             var serviceProvider = services.BuildServiceProvider();
@@ -170,12 +176,14 @@ namespace DomainEvents.Tests.Run
             // Arrange
             var handlerResult = new Dictionary<IDomainEvent, Type>();
             var services = new ServiceCollection();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
             services.AddSingleton<IResolver>(_ =>
             {
                 var handlers = new List<IHandler> { new CustomerCreatedHandler(handlerResult) };
                 return new Resolver(handlers);
             });
-            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>()));
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            services.AddSingleton<IEventListener>(sp => new EventListener(sp.GetRequiredService<IEventQueue>(), sp.GetRequiredService<IResolver>()));
             services.AddSingleton<IEventInterceptor, EventInterceptor>();
             services.AddSingleton<IAggregateFactory, AggregateFactory>();
             var serviceProvider = services.BuildServiceProvider();

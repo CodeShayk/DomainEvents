@@ -1,144 +1,82 @@
 # Release Notes - v5.0.0
 
+## New Architecture
+
+```
+Aggregate -> Interceptor -> Middleware -> Dispatcher -> Queue <- Listener -> Middleware -> Resolver -> Handler
+```
+
+### Components:
+
+1. **IEventMiddleware** - Custom plugins that run before/after dispatch and handling
+2. **IEventQueue** - In-flight non-persistent queue for events
+3. **IEventListener** - Listens to queue and triggers handling
+
 ## New Features
 
-### 1. Custom Dispatcher Support
-Users can now provide their own custom dispatcher to customize how events are dispatched to handlers. This enables adding custom behavior such as logging, filtering, or transformations while keeping the standard EventInterceptor with telemetry.
+### 1. Event Middleware
+
+Custom plugins that run at various points in the event pipeline:
 
 ```csharp
-public class MyCustomDispatcher : IEventDispatcher
+public class MyMiddleware : IEventMiddleware
 {
-    private readonly IEventDispatcher _innerDispatcher;
-    
-    public MyCustomDispatcher(IEventDispatcher innerDispatcher)
-    {
-        _innerDispatcher = innerDispatcher;
-    }
-    
-    public void Dispatch(object @event)
-    {
-        // Custom logic before
-        Console.WriteLine($"Dispatching: {@event.GetType().Name}");
-        
-        // Forward to inner dispatcher
-        _innerDispatcher.Dispatch(@event);
-    }
-    
-    public Task DispatchAsync(object @event)
-    {
-        Dispatch(@event);
-        return Task.CompletedTask;
-    }
+    public Task<bool> OnDispatchingAsync(EventContext context) { ... }
+    public Task OnDispatchedAsync(EventContext context) { ... }
+    public Task<bool> OnHandlingAsync(EventContext context) { ... }
+    public Task OnHandledAsync(EventContext context) { ... }
 }
 ```
 
 **Registration:**
 ```csharp
-// Using type
+services.AddDomainEvents(assembly);
+services.AddSingleton<IEventMiddleware, MyMiddleware>();
+```
+
+### 2. Event Queue
+
+In-flight non-persistent queue for events:
+
+```csharp
+// Use default in-memory queue
+services.AddDomainEvents(assembly);
+
+// Or use custom queue
+services.AddSingleton<IEventQueue, MyCustomQueue>();
+
+// Process queue
+var dispatcher = serviceProvider.GetRequiredService<IEventDispatcher>();
+await dispatcher.ProcessQueueAsync();
+```
+
+### 3. Custom Dispatcher
+
+```csharp
 services.AddDomainEventsWithDispatcher<MyCustomDispatcher>(assembly);
-
-// Using instance
-services.AddDomainEventsWithDispatcher(new MyCustomDispatcher(dispatcher), assembly);
 ```
 
-### 2. IEventDispatcher Interface
-Introduced `IEventDispatcher` interface to separate event dispatching logic from interception. Custom dispatchers can wrap the inner dispatcher for decorator patterns.
+### 4. Standard EventInterceptor with Telemetry
+The `EventInterceptor` remains standard with OpenTelemetry and logging.
 
-**Interface:**
-```csharp
-public interface IEventDispatcher
-{
-    void Dispatch(object @event);
-    Task DispatchAsync(object @event);
-}
-```
-
-### 3. Standard EventInterceptor with Telemetry
-The `EventInterceptor` remains standard and includes:
-- OpenTelemetry activity tracking
-- Logging of event dispatching
-- Error handling and reporting
-
-The interceptor is automatically registered and should not be customized.
-
-### 4. Async Handler Interface (IHandler<T>)
-Changed from synchronous `IHandle<T>` to asynchronous `IHandler<T>` interface:
-
-```csharp
-// Before (v4.x)
-public interface IHandle<T> : IHandle where T : IDomainEvent
-{
-    void Handle(T @event);
-}
-
-// After (v5.x)
-public interface IHandler<T> : IHandler where T : IDomainEvent
-{
-    Task HandleAsync(T @event);
-}
-```
-
-### 5. Service Locator Pattern in AggregateFactory
-The `AggregateFactory` now uses the service locator pattern to resolve dispatchers at proxy creation time.
+### 5. Async Handler Interface (IHandler<T>)
+Changed from `IHandle<T>` to `IHandler<T>` with async `HandleAsync()`.
 
 ## Breaking Changes
 
-### 1. IHandle -> IHandler
-- `IHandle<T>` renamed to `IHandler<T>`
-- `IHandle` renamed to `IHandler`
-- `Handle()` method changed to `HandleAsync()` returning `Task`
-
-### 2. EventInterceptor Constructor
-- `EventInterceptor` now requires `IEventDispatcher` instead of `IResolver`
-- Constructor signature: `EventInterceptor(IEventDispatcher dispatcher, ILogger logger = null)`
-
-### 3. Service Registration
-- `AddDomainEventsWithDispatcher<T>()` replaces `AddDomainEventsWithInterceptor<T>()`
-
-## Bug Fixes
-
-- Fixed issue where custom interceptors would not dispatch events to handlers
+1. `IHandle<T>` -> `IHandler<T>`
+2. `Handle()` -> `HandleAsync()` returning `Task`
+3. `EventInterceptor` requires `IEventDispatcher`
 
 ## Migration Guide
 
-### Update Handlers
 ```csharp
 // Before
-public class CustomerCreatedHandler : IHandle<CustomerCreated>
-{
-    public void Handle(CustomerCreated @event) { }
-}
+public class Handler : IHandle<Event> { void Handle(Event e) { } }
 
 // After
-public class CustomerCreatedHandler : IHandler<CustomerCreated>
-{
-    public Task HandleAsync(CustomerCreated @event) => Task.CompletedTask;
+public class Handler : IHandler<Event> 
+{ 
+    Task HandleAsync(Event e) => Task.CompletedTask; 
 }
 ```
-
-### Update Aggregate Implementations
-```csharp
-// Before
-public class WarehouseAggregate : Aggregate, IHandle<OrderReceived>
-{
-    public void Handle(OrderReceived @event) { }
-}
-
-// After
-public class WarehouseAggregate : Aggregate, IHandler<OrderReceived>
-{
-    public Task HandleAsync(OrderReceived @event) => Task.CompletedTask;
-}
-```
-
-### Adding Custom Dispatcher (instead of Interceptor)
-```csharp
-// Register custom dispatcher
-services.AddDomainEventsWithDispatcher<LoggingDispatcher>(assembly);
-```
-
-## Dependencies
-- Castle.DynamicProxy
-- Microsoft.Extensions.DependencyInjection.Abstractions
-- Microsoft.Extensions.Logging.Abstractions
-- OpenTelemetry (optional, for telemetry support)
