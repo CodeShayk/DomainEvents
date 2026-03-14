@@ -95,7 +95,11 @@ namespace DomainEvents.Tests.Run
             services.AddSingleton<IEventQueue, InMemoryEventQueue>();
             services.AddSingleton<IResolver>(_ =>
             {
-                var handlers = new List<IHandler> { new OrderReceivedHandler(handlerResult) };
+                var handlers = new List<IHandler> 
+                { 
+                    new CustomerCreatedHandler(handlerResult),
+                    new OrderReceivedHandler(handlerResult)
+                };
                 return new Resolver(handlers);
             });
             services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
@@ -217,6 +221,46 @@ namespace DomainEvents.Tests.Run
 
             // Assert - no handlers should be called since we're not using a proxy
             Assert.That(handlerResult.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task RaiseAsync_OnProxiedAggregate_ShouldDispatch()
+        {
+            // Arrange
+            var handlerResult = new Dictionary<IDomainEvent, Type>();
+            var services = new ServiceCollection();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
+            services.AddSingleton<IResolver>(_ =>
+            {
+                var handlers = new List<IHandler> 
+                { 
+                    new CustomerCreatedHandler(handlerResult),
+                    new OrderReceivedHandler(handlerResult)
+                };
+                return new Resolver(handlers);
+            });
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            services.AddSingleton<IEventListener>(sp => new EventListener(sp.GetRequiredService<IEventQueue>(), sp.GetRequiredService<IResolver>()));
+            services.AddSingleton<IEventInterceptor, EventInterceptor>();
+            services.AddSingleton<IAggregateFactory, AggregateFactory>();
+            services.AddSingleton<IOrderService, OrderService>();
+
+            var serviceProvider = services.BuildServiceProvider();
+            var factory = serviceProvider.GetRequiredService<IAggregateFactory>();
+
+            // Act
+            var order = await factory.CreateFromServiceProviderAsync<OrderAggregate>();
+            order.CreateOrder("O-1234");
+
+            // Wait for event processing
+            await Task.Delay(100);
+
+            // Assert
+            Assert.That(handlerResult.Count, Is.GreaterThan(0));
+
+            var orderService = serviceProvider.GetRequiredService<IOrderService>();
+
+            Assert.That(orderService.Counter, Is.EqualTo(1));
         }
     }
 }

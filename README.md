@@ -21,6 +21,11 @@ It's important to ensure that, just like a database transaction, either all the 
 
 ---
 
+Figure below shows how consistency between aggregates is achieved by domain events. When the user initiates an order, the `Order Aggregate` sends an `OrderStarted` domain event. The OrderStarted domain event is handled by the `Buyer Aggregate` to create a Buyer object in the ordering microservice (bounded context). Please read [Domain Events](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-events-design-implementation) for more details.
+
+![image](https://user-images.githubusercontent.com/6259981/204060193-d2f5241e-c1d2-46ab-a16d-1c3047bc151b.png)
+
+
 ## Two Approaches to Use DomainEvents
 
 ### Approach 1: Using Publisher and Handler Directly
@@ -73,7 +78,7 @@ public class OrderPlaced : IDomainEvent
 }
 ```
 
-**2. Create an Aggregate**
+**2. Create an Aggregate (Publisher)**
 ```csharp
 public class OrderAggregate : Aggregate
 {
@@ -89,6 +94,16 @@ public class OrderAggregate : Aggregate
         Raise(@event);
     }
 }
+
+public class WarehouseAggregate : Aggregate, ISubscribes<OrderPlaced>
+{
+    public Task HandleAsync(OrderPlaced @event)
+    {
+        Console.WriteLine($"Order created: {@event.OrderId}");
+        return Task.CompletedTask;
+    }
+}
+
 ```
 
 **3. Register Services**

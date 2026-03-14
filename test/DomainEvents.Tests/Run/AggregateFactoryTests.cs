@@ -128,5 +128,117 @@ namespace DomainEvents.Tests.Run
             // Act & Assert
             Assert.DoesNotThrowAsync(async () => await _factory.CreateAsync<CustomerAggregate>(null));
         }
+
+        [Test]
+        public async Task CreateFromInstanceAsync_ShouldReturnProxiedInstance()
+        {
+            // Arrange
+            var original = new CustomerAggregate();
+
+            // Act
+            var proxied = await _factory.CreateFromInstanceAsync(original);
+
+            // Assert
+            Assert.That(proxied, Is.Not.Null);
+            Assert.That(proxied, Is.InstanceOf<CustomerAggregate>());
+            Assert.That(proxied, Is.InstanceOf<IDomainAggregate>());
+        }
+
+        [Test]
+        public async Task CreateFromInstanceAsync_ProxiedInstance_ShouldDispatchEvents()
+        {
+            // Arrange
+            var original = new CustomerAggregate();
+            var proxied = await _factory.CreateFromInstanceAsync(original);
+
+            // Act
+            proxied.RegisterCustomer("FromInstance Test");
+
+            // Assert
+            Assert.That(_handlerResult.Count, Is.EqualTo(1));
+            Assert.That(_handlerResult.Values.First(), Is.EqualTo(typeof(CustomerCreatedHandler)));
+        }
+
+        [Test]
+        public async Task CreateFromInstanceAsync_NonGeneric_ShouldReturnProxiedInstance()
+        {
+            // Arrange
+            var original = new CustomerAggregate();
+
+            // Act
+            var proxied = await _factory.CreateFromInstanceAsync<CustomerAggregate>(original);
+
+            // Assert
+            Assert.That(proxied, Is.Not.Null);
+            Assert.That(proxied, Is.InstanceOf<IDomainAggregate>());
+        }
+
+        [Test]
+        public async Task CreateFromInstanceAsync_ProxiedWarehouse_ShouldHandleEvents()
+        {
+            // Arrange
+            var original = new WarehouseAggregate();
+            var proxied = await _factory.CreateFromInstanceAsync(original);
+
+            // Act
+            proxied.ProcessOrder("ORD-INSTANCE");
+
+            // Assert
+            Assert.That(_handlerResult.Count, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public async Task CreateFromInstanceAsync_MultipleProxiesFromSameInstance_ShouldBothDispatchEvents()
+        {
+            // Arrange
+            var original = new WarehouseAggregate();
+
+            // Act
+            var proxy1 = await _factory.CreateFromInstanceAsync(original);
+            var proxy2 = await _factory.CreateFromInstanceAsync(original);
+
+            proxy1.ProcessOrder("PROXY-1");
+            proxy2.ProcessOrder("PROXY-2");
+
+            // Assert - both proxies dispatch events to handlers
+            Assert.That(_handlerResult.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public async Task CreateFromServiceProviderAsync_ShouldReturnProxiedInstance()
+        {
+            // Arrange - register aggregate with DI
+            var services = new ServiceCollection();
+            services.AddTransient<CustomerAggregate>();
+            services.AddSingleton<IEventQueue, InMemoryEventQueue>();
+            services.AddSingleton<IResolver>(_ =>
+            {
+                var handlers = new List<IHandler>();
+                return new Resolver(handlers);
+            });
+            services.AddSingleton<IEventDispatcher>(sp => new EventDispatcher(sp.GetRequiredService<IResolver>(), sp.GetRequiredService<IEventQueue>()));
+            var sp = services.BuildServiceProvider();
+
+            var factory = new AggregateFactory(sp);
+
+            // Act
+            var proxied = await factory.CreateFromServiceProviderAsync<CustomerAggregate>();
+
+            // Assert
+            Assert.That(proxied, Is.Not.Null);
+            Assert.That(proxied, Is.InstanceOf<CustomerAggregate>());
+            Assert.That(proxied, Is.InstanceOf<IDomainAggregate>());
+        }
+
+        [Test]
+        public async Task CreateAsync_DefaultConstructor_ShouldWork()
+        {
+            // Arrange & Act
+            var proxied = await _factory.CreateAsync<CustomerAggregate>();
+
+            // Assert
+            Assert.That(proxied, Is.Not.Null);
+            Assert.That(proxied, Is.InstanceOf<CustomerAggregate>());
+        }
     }
 }
