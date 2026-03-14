@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462;netstandard2.0;netstandard2.1;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -17,25 +17,34 @@
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Title>DomainEvents</Title>
-    <Authors>Code Shayk</Authors>
-    <Company>Code Shayk</Company>
+    <Authors>CodeShayk</Authors>
+    <Company>CodeShayk</Company>
     <Product>DomainEvents</Product>
     <Description>.Net Library to implement transactional events in domain model.</Description>
-    <Copyright>Copyright (c) 2025 Code Shayk</Copyright>
+    <Copyright>Copyright (c) 2026 Code Shayk</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/CodeShayk/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>domain-events; domain events; .net9.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
-    <Version>4.0.1</Version>
-    <PackageIcon>ninja-icon-16.png</PackageIcon>
+    <PackageTags>domain-events; domain-model, events; event-handling; c#; transactional-events; domain-pub/sub; event-pub-sub; ddd; aggregates; castle-dynamicproxy</PackageTags>
+    <Version>4.1.0</Version>
+    <PackageIcon>pub-sub-icon.png</PackageIcon>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <PackageProjectUrl>https://github.com/CodeShayk/DomainEvents/wiki</PackageProjectUrl>
-    <PackageReleaseNotes>Release v4.0.1- Targets .Net Framework 4.6.2, .Net Standards 2.0 and 2.1, .Net 9.0
+    <PackageReleaseNotes>
+      Release v4.2.0 - Updated all dependencies to latest stable versions
+      - OpenTelemetry.Api 1.11.2 -&gt; 1.15.0 (security fix for CVE-2025-27513)
+      - Castle.Core 5.1.1 -&gt; 5.2.1
+      - Microsoft.Extensions 9.0.0 -&gt; 10.0.5
+      - Targets .Net 10.0
+      - Target .Net 9.0
+      - Target .Net 8.0
+      - Target .Net Standard 2.1
+      - Target .Net Standard 2.0
     </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\ninja-icon-16.png">
+    <None Include="..\..\images\pub-sub-icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -47,6 +56,13 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="5.2.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.15.0" />
   </ItemGroup>
 
 </Project>

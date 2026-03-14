@@ -11,6 +11,10 @@ namespace DomainEvents
         Task HandleAsync(T @event);
     }
 
+    /// <summary>
+    /// Marker interface for domain event handlers.
+    /// </summary>
     public interface IHandler
-    { }
+    {
+    }
 }
