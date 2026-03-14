@@ -10,6 +10,7 @@
 6. [Extension Points](#extension-points)
    - [Custom Event Dispatcher](#custom-event-dispatcher)
    - [Custom Event Queue](#custom-event-queue)
+   - [Event Listener](#event-listener)
    - [Custom Event Interceptor](#custom-event-interceptor)
    - [Custom Handler Resolver](#custom-handler-resolver)
    - [Event Middleware](#event-middleware)
@@ -50,18 +51,18 @@ DomainEvents is a library for implementing transactional domain events in domain
 │  ┌─────────────────────────────────────────────┐                              │
 │  │         EventInterceptor (Proxy)            │                              │
 │  │   - Castle DynamicProxy interception        │                              │
-│  │   - OpenTelemetry tracking                 │                              │
+│  │   - OpenTelemetry tracking                  │                              │
 │  └─────────────────────┬───────────────────────┘                              │
 │                        │                                                      │
 └────────────────────────┼──────────────────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      Middleware Pipeline                                      │
+│                      Middleware Pipeline (Dispatch)                           │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
 │  │ Middleware 1    │  │ Middleware 2    │  │ Middleware N    │              │
 │  │ OnDispatching   │  │ OnDispatching   │  │ OnDispatching   │              │
-│  │ OnDispatched   │  │ OnDispatched   │  │ OnDispatched   │              │
+│  │ OnDispatched    │  │ OnDispatched    │  │ OnDispatched    │              │
 │  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘              │
 │           │                    │                    │                         │
 │           └────────────────────┼────────────────────┘                         │
@@ -70,31 +71,66 @@ DomainEvents is a library for implementing transactional domain events in domain
                                  │
                                  ▼
 ┌───────────────────────────────────────────────────────────────────────────────┐
-│                         Dispatcher Layer                                       │
+│                         Event Queue                                            │
 │  ┌─────────────────────────────────────────────────────┐                      │
-│  │                   EventDispatcher                   │                      │
-│  │  - Checks Event Queue                                │                      │
-│  │  - Processes events                                 │                      │
+│  │                   InMemoryEventQueue                │                      │
+│  │   - Enqueue events                                  │                      │
+│  │   - Invoke subscription delegate on enqueue         │                      │
+│  └─────────────────────────┬───────────────────────────┘                      │
+│                            │                                                  │
+│                   (delegate callback)                                         │
+└────────────────────────────┼──────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                       EventListener                                            │
+│  ┌─────────────────────────────────────────────────────┐                      │
+│  │              EventListener.ProcessEventAsync         │                      │
+│  │   - Subscribes to queue via delegate                │                      │
+│  │   - Processes events from queue                     │                      │
 │  └─────────────────────────┬───────────────────────────┘                      │
 │                            │                                                  │
 └────────────────────────────┼──────────────────────────────────────────────────┘
                              │
                              ▼
 ┌───────────────────────────────────────────────────────────────────────────────┐
+│                   Middleware Pipeline (Handle)                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │ Middleware 1    │  │ Middleware 2    │  │ Middleware N    │              │
+│  │ OnHandling      │  │ OnHandling      │  │ OnHandling      │              │
+│  │ OnHandled       │  │ OnHandled       │  │ OnHandled       │              │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘              │
+│           │                    │                    │                         │
+│           └────────────────────┼────────────────────┘                         │
+│                                │                                              │
+└────────────────────────────────┼──────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
 │                         Handler Layer                                          │
 │  ┌─────────────────────────────────────────────────────┐                      │
-│  │                    Resolver                          │                      │
-│  │   - Resolves handlers for event type                │                      │
+│  │                    Resolver                         │                      │
+│  │   - Resolves handlers for event type               │                      │
 │  └─────────────────────────┬───────────────────────────┘                      │
 │                            │                                                  │
 │                            ▼                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                        │
 │  │  Handler 1   │  │  Handler 2   │  │  Handler N   │                        │
-│  │ OnHandling   │  │ OnHandling   │  │ OnHandling   │                        │
-│  │ OnHandled    │  │ OnHandled    │  │ OnHandled    │                        │
 │  └──────────────┘  └──────────────┘  └──────────────┘                        │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Event Flow
+
+1. **Aggregate.Raise()** - Aggregate raises an event
+2. **EventInterceptor** - Intercepts the call, proceeds with Raise, then dispatches event
+3. **EventDispatcher.DispatchAsync()** - Runs dispatch middleware, enqueues event
+4. **InMemoryEventQueue** - Stores event, invokes subscribed delegate immediately
+5. **EventListener** - Receives callback, processes event through handle middleware
+6. **Resolver** - Resolves handlers for the event type
+7. **Handler** - Processes the event
+
+**Note**: The dispatcher returns immediately after enqueueing (fire-and-forget). Event processing happens asynchronously via the queue subscription delegate.
 
 ---
 
@@ -310,7 +346,7 @@ services.AddSingleton<IEventMiddleware, MyMiddleware>();
 
 ### Custom Event Dispatcher
 
-Implement `IEventDispatcher` to customize how events are dispatched:
+Implement `IEventDispatcher` to customize how events are dispatched. The dispatcher runs dispatch middleware and enqueues events. Event processing is handled by the EventListener via queue subscription.
 
 ```csharp
 public class MyCustomDispatcher : IEventDispatcher
@@ -357,8 +393,8 @@ public class MyCustomDispatcher : IEventDispatcher
             }
         }
 
-        // Process event
-        await ProcessEventAsync(context);
+        // Enqueue event - EventListener will process via subscription
+        await _queue.EnqueueAsync(context);
 
         context.IsDispatched = true;
         
@@ -369,23 +405,12 @@ public class MyCustomDispatcher : IEventDispatcher
         }
     }
 
-    private async Task ProcessEventAsync(EventContext context)
-    {
-        var handlers = await _resolver.ResolveAsync(context.EventType);
-        foreach (var handler in handlers)
-        {
-            // Run handling middleware (before)
-            foreach (var middleware in _middlewares)
-            {
-                if (!await middleware.OnHandlingAsync(context))
-                    continue;
-            }
+    public IEventQueue Queue => _queue;
+}
 
-            // Invoke handler
-            // ...
+---
 
-            // Run handling middleware (after)
-            foreach (var middleware in _middlewares)
+### Custom Event Queue
             {
                 await middleware.OnHandledAsync(context);
             }
@@ -428,13 +453,19 @@ Implement `IEventQueue` to create a custom queue (e.g., persistent queue, distri
 public class MyCustomQueue : IEventQueue
 {
     private readonly Queue<EventContext> _queue = new Queue<EventContext>();
+    private EventDequeuedHandler _handler;
+    private readonly object _lock = new object();
     
     public Task EnqueueAsync(EventContext context)
     {
-        lock (_queue)
+        lock (_lock)
         {
             _queue.Enqueue(context);
         }
+
+        // Immediately invoke the subscribed handler (fire-and-forget)
+        _handler?.Invoke(context);
+
         return Task.CompletedTask;
     }
 
@@ -444,7 +475,7 @@ public class MyCustomQueue : IEventQueue
     public Task<EventContext> DequeueAsync()
 #endif
     {
-        lock (_queue)
+        lock (_lock)
         {
             if (_queue.Count > 0)
             {
@@ -464,7 +495,7 @@ public class MyCustomQueue : IEventQueue
 
     public IReadOnlyList<EventContext> PeekAll()
     {
-        lock (_queue)
+        lock (_lock)
         {
             return _queue.ToArray();
         }
@@ -472,7 +503,7 @@ public class MyCustomQueue : IEventQueue
 
     public void Clear()
     {
-        lock (_queue)
+        lock (_lock)
         {
             _queue.Clear();
         }
@@ -482,14 +513,24 @@ public class MyCustomQueue : IEventQueue
     {
         get
         {
-            lock (_queue)
+            lock (_lock)
             {
                 return _queue.Count;
             }
         }
     }
+
+    public void Subscribe(EventDequeuedHandler handler)
+    {
+        _handler = handler;
+    }
 }
 ```
+
+**Key Points:**
+- The `Subscribe` method registers a delegate that gets called when events are enqueued
+- The delegate is invoked immediately in `EnqueueAsync` (synchronous callback)
+- This enables fire-and-forget event processing
 
 **Registration:**
 
@@ -727,6 +768,95 @@ services.AddSingleton<IEventMiddleware>(sp =>
 
 ---
 
+### Event Listener
+
+Implement `IEventListener` to customize how events are processed from the queue:
+
+```csharp
+public class MyEventListener : IEventListener
+{
+    private readonly IEventQueue _queue;
+    private readonly IResolver _resolver;
+    private readonly IEnumerable<IEventMiddleware> _middlewares;
+    private readonly ILogger<MyEventListener> _logger;
+
+    public MyEventListener(
+        IEventQueue queue,
+        IResolver resolver,
+        IEnumerable<IEventMiddleware> middlewares = null,
+        ILogger<MyEventListener> logger = null)
+    {
+        _queue = queue;
+        _resolver = resolver;
+        _middlewares = middlewares ?? Enumerable.Empty<IEventMiddleware>();
+        _logger = logger;
+
+        // Subscribe to queue - this is called when events are enqueued
+        _queue.Subscribe(OnEventEnqueued);
+    }
+
+    private Task OnEventEnqueued(EventContext context)
+    {
+        return ProcessEventAsync(context);
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        _logger?.LogInformation("Event listener started");
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync()
+    {
+        _logger?.LogInformation("Event listener stopped");
+    }
+
+    public async Task ProcessEventAsync(EventContext context)
+    {
+        // Process event through middleware and handlers
+        var handlers = await _resolver.ResolveAsync(context.EventType);
+        
+        foreach (var handler in handlers)
+        {
+            // Run handling middleware (before)
+            foreach (var middleware in _middlewares)
+            {
+                if (!await middleware.OnHandlingAsync(context))
+                    continue;
+            }
+
+            // Invoke handler
+            var handlerInterfaceType = typeof(IHandler<>).MakeGenericType(context.EventType);
+            var handleMethod = handlerInterfaceType.GetMethod("HandleAsync");
+            handleMethod?.Invoke(handler, new[] { context.Event });
+            
+            context.IsHandled = true;
+
+            // Run handling middleware (after)
+            foreach (var middleware in _middlewares)
+            {
+                await middleware.OnHandledAsync(context);
+            }
+        }
+    }
+}
+```
+
+**Key Points:**
+- The listener subscribes to the queue via `_queue.Subscribe(OnEventEnqueued)`
+- When an event is enqueued, the delegate is invoked immediately
+- The listener handles the processing pipeline: middleware -> resolver -> handler
+- The EventListener is automatically registered when using `AddDomainEvents`
+
+**Registration:**
+
+```csharp
+services.AddDomainEvents(assembly);
+// EventListener is auto-registered and subscribes automatically
+```
+
+---
+
 ### Custom Aggregate Factory
 
 Implement `IAggregateFactory` to customize how aggregates are created:
@@ -841,9 +971,15 @@ public class AnotherMiddleware : IEventMiddleware
 | `IEventDispatcher` | Interface for dispatching events |
 | `IEventInterceptor` | Interceptor for aggregate Raise/RaiseAsync methods |
 | `IEventMiddleware` | Middleware for event pipeline |
-| `IEventQueue` | Queue for in-flight events |
-| `IEventListener` | Listener for processing queued events |
+| `IEventQueue` | Queue for in-flight events with subscription support |
+| `IEventListener` | Listener for processing queued events via subscription |
 | `IAggregateFactory` | Factory for creating proxied aggregates |
+
+### Delegates
+
+| Delegate | Description |
+|----------|-------------|
+| `EventDequeuedHandler` | Delegate for processing dequeued events (signature: `Task Handler(EventContext context)`) |
 
 ### Classes
 
@@ -854,9 +990,10 @@ public class AnotherMiddleware : IEventMiddleware
 | `Publisher` | Default implementation of IPublisher |
 | `Resolver` | Default implementation of IResolver |
 | `EventDispatcher` | Default implementation of IEventDispatcher |
+| `EventListener` | Default implementation of IEventListener - subscribes to queue and processes events |
 | `EventInterceptor` | Default interceptor with telemetry |
 | `AggregateFactory` | Default factory for proxied aggregates |
-| `InMemoryEventQueue` | Default in-memory queue implementation |
+| `InMemoryEventQueue` | Default in-memory queue with subscription support |
 | `EventMiddlewareBase` | Base class for middleware |
 | `LoggingMiddleware` | Built-in logging middleware |
 
