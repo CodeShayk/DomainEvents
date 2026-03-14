@@ -911,7 +911,7 @@ services.AddSingleton<IAggregateFactory, MyAggregateFactory>();
 
 ## Auto-Registration
 
-The library automatically discovers and registers components from specified assemblies:
+The library automatically discovers and registers components from specified assemblies. Only types with **parameterless constructors** are auto-registered. Types with constructor parameters must be registered explicitly.
 
 ### What Gets Auto-Registered
 
@@ -926,16 +926,68 @@ The library automatically discovers and registers components from specified asse
 2. **Middlewares**: All types implementing `IEventMiddleware` with parameterless constructors are registered
 3. **Manual Override**: If you manually register a service before calling `AddDomainEvents`, the auto-registration skips that specific type
 
+### Types with Parameters - Must Register Explicitly
+
+If a handler or middleware has constructor parameters, it will **not** be auto-registered. You must register it explicitly:
+
+**Handler with dependencies (must register manually):**
+```csharp
+public class OrderHandler : IHandler<OrderPlaced>
+{
+    private readonly IOrderService _orderService;
+    
+    // Has constructor parameter - won't be auto-registered
+    public OrderHandler(IOrderService orderService)
+    {
+        _orderService = orderService;
+    }
+    
+    public Task HandleAsync(OrderPlaced @event)
+    {
+        return _orderService.ProcessAsync(@event);
+    }
+}
+
+// Must register explicitly:
+services.AddSingleton<IHandler, OrderHandler>();
+services.AddSingleton<IOrderService, OrderService>();
+```
+
+**Middleware with dependencies (must register manually):**
+```csharp
+public class AuditMiddleware : IEventMiddleware
+{
+    private readonly IAuditService _auditService;
+    
+    // Has constructor parameter - won't be auto-registered
+    public AuditMiddleware(IAuditService auditService)
+    {
+        _auditService = auditService;
+    }
+    
+    public Task<bool> OnDispatchingAsync(EventContext context)
+    {
+        return _auditService.LogAsync(context.Event);
+    }
+    
+    // ... other interface implementations
+}
+
+// Must register explicitly:
+services.AddSingleton<IEventMiddleware, AuditMiddleware>();
+services.AddSingleton<IAuditService, AuditService>();
+```
+
 ### Example: Auto-Registration
 
 ```csharp
-// This will auto-register all handlers and middlewares
+// This will auto-register all handlers and middlewares with parameterless constructors
 services.AddDomainEvents(typeof(MyHandler).Assembly);
 ```
 
 ### Example: Preventing Auto-Registration
 
-To prevent a middleware from being auto-registered, add a constructor with parameters:
+To prevent auto-registration, add a constructor with parameters:
 
 ```csharp
 // Won't be auto-registered (has constructor parameter)
