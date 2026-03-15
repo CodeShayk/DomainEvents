@@ -1,12 +1,16 @@
-# <img src="https://github.com/CodeShayk/DomainEvents/blob/master/images/pub-sub-icon.png" alt="events" style="width:100px;"/> DomainEvents v4.0.1
+
+# <img src="https://github.com/CodeShayk/DomainEvents/blob/master/images/pub-sub-icon.png" alt="events" style="width:100px;"/> DomainEvents v5.0.0
 [![NuGet version](https://badge.fury.io/nu/Dormito.DomainEvents.svg)](https://badge.fury.io/nu/Dormito.DomainEvents)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/CodeShayk/DomainEvents/blob/master/License.md)
 [![Build](https://github.com/CodeShayk/DomainEvents/actions/workflows/master-build.yml/badge.svg)](https://github.com/CodeShayk/DomainEvents/actions/workflows/master-build.yml)
 [![CodeQL](https://github.com/CodeShayk/DomainEvents/actions/workflows/master-codeQL.yml/badge.svg)](https://github.com/CodeShayk/DomainEvents/actions/workflows/master-codeQL.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/CodeShayk/DomainEvents?logo=github&sort=semver)](https://github.com/CodeShayk/DomainEvents/releases/latest)
+[![.Net 10.0](https://img.shields.io/badge/.Net-10.0-green)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0)
 [![.Net 9.0](https://img.shields.io/badge/.Net-9.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
-[![.Net Standard 2.0](https://img.shields.io/badge/.NetStandard-2.0-green)](https://github.com/dotnet/standard/blob/v2.0.0/docs/versions/netstandard2.0.md)
-[![.Net Framework 4.6.4](https://img.shields.io/badge/.Net-4.6.4-blue)](https://dotnet.microsoft.com/en-us/download/dotnet-framework/net46)
+[![.Net 8.0](https://img.shields.io/badge/.Net-8.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+[![.Net Standard 2.1](https://img.shields.io/badge/.NetStandard-2.1-green)](https://github.com/dotnet/standard/blob/v2.0.0/docs/versions/netstandard2.1.md)
+[![.Net Standard 2.0](https://img.shields.io/badge/.NetStandard-2.0-blue)](https://github.com/dotnet/standard/blob/v2.0.0/docs/versions/netstandard2.0.md)
+
 ## Library to help implement transactional events in domain bounded context.
 
 Use domain events to explicitly implement side effects of changes within your domain. In other words, and using DDD terminology, use domain events to explicitly implement side effects across multiple aggregates. 
