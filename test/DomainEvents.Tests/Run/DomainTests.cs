@@ -7,16 +7,16 @@ namespace DomainEvents.Tests.Run
 {
     public class DomainTests
     {
-        private Publisher _Publisher;
-        private Dictionary<IDomainEvent, Type> _HandlerResult;
+        private Publisher _publisher;
+        private Dictionary<IDomainEvent, Type> _handlerResult;
 
         [SetUp]
         public void Setup()
         {
-            _HandlerResult = new Dictionary<IDomainEvent, Type>();
-            _Publisher = new Publisher(new Resolver(
-                new List<IHandler> { new CustomerCreatedHandler(_HandlerResult),
-                new OrderReceivedHandler(_HandlerResult) })
+            _handlerResult = new Dictionary<IDomainEvent, Type>();
+            _publisher = new Publisher(new Resolver(
+                new List<IHandler> { new CustomerCreatedHandler(_handlerResult),
+                new OrderReceivedHandler(_handlerResult) })
              );
         }
 
@@ -24,22 +24,22 @@ namespace DomainEvents.Tests.Run
         public async Task PublishCustomerCreatedTest()
         {
             var @event = new CustomerCreated { Name = "Ninja Sha!4h" };
-            await _Publisher.RaiseAsync(@event);
+            await _publisher.RaiseAsync(@event);
 
-            Assert.That(_HandlerResult.Count, Is.EqualTo(1));
-            Assert.That(_HandlerResult.ContainsKey(@event), Is.True);
-            Assert.That(_HandlerResult.ContainsValue(typeof(CustomerCreatedHandler)), Is.True);
+            Assert.That(_handlerResult.Count, Is.EqualTo(1));
+            Assert.That(_handlerResult.ContainsKey(@event), Is.True);
+            Assert.That(_handlerResult.ContainsValue(typeof(CustomerCreatedHandler)), Is.True);
         }
 
         [Test]
         public async Task PublishOrderReceivedTest()
         {
             var @event = new OrderReceived { OrderNo = "23451GHY0WQ" };
-            await _Publisher.RaiseAsync(@event);
+            await _publisher.RaiseAsync(@event);
 
-            Assert.That(_HandlerResult.Count, Is.EqualTo(1));
-            Assert.That(_HandlerResult.ContainsKey(@event), Is.True);
-            Assert.That(_HandlerResult.ContainsValue(typeof(OrderReceivedHandler)), Is.True);
+            Assert.That(_handlerResult.Count, Is.EqualTo(1));
+            Assert.That(_handlerResult.ContainsKey(@event), Is.True);
+            Assert.That(_handlerResult.ContainsValue(typeof(OrderReceivedHandler)), Is.True);
         }
     }
 }

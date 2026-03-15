@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462;netstandard2.0;netstandard2.1;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -16,26 +16,31 @@
     <PackageLicenseFile>License.md</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Title>DomainEvents</Title>
-    <Authors>Code Shayk</Authors>
-    <Company>Code Shayk</Company>
+    <Title>Domain Events</Title>
+    <Authors>CodeShayk</Authors>
+    <Company>CodeShayk</Company>
     <Product>DomainEvents</Product>
     <Description>.Net Library to implement transactional events in domain model.</Description>
-    <Copyright>Copyright (c) 2025 Code Shayk</Copyright>
+    <Copyright>Copyright (c) 2026 Code Shayk</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/CodeShayk/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>domain-events; domain events; .net9.0; c# domain events; domain pub/sub; event pub sub</PackageTags>
-    <Version>4.0.1</Version>
-    <PackageIcon>ninja-icon-16.png</PackageIcon>
+    <PackageTags>domain-events; domain-model, events; event-handling; c#; transactional-events; domain-pub/sub; event-pub-sub; ddd; aggregates; castle-dynamicproxy</PackageTags>
+    <Version>5.0.0</Version>
+    <PackageIcon>pub-sub-icon.png</PackageIcon>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <PackageProjectUrl>https://github.com/CodeShayk/DomainEvents/wiki</PackageProjectUrl>
-    <PackageReleaseNotes>Release v4.0.1- Targets .Net Framework 4.6.2, .Net Standards 2.0 and 2.1, .Net 9.0
+    <PackageReleaseNotes>
+      Release v5.0.0 - Major update with new features, improvements, and bug fixes.
+      This release includes enhanced aggregate support, improved event handling performance, and better integration with Castle DynamicProxy.
+      For more details, see the release notes on GitHub: https://github.com/CodeShayk/DomainEvents/releases/tag/v5.0.0
     </PackageReleaseNotes>
+    <FileVersion>5.0.0</FileVersion>
+    <AssemblyVersion>5.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\ninja-icon-16.png">
+    <None Include="..\..\images\pub-sub-icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -47,6 +52,14 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="5.2.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.15.0" />
   </ItemGroup>
 
 </Project>

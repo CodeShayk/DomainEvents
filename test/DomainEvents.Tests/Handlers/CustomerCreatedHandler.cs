@@ -1,21 +1,21 @@
-﻿using DomainEvents.Tests.Events;
+using System.Threading.Tasks;
+using DomainEvents.Tests.Events;
 
 namespace DomainEvents.Tests.Handlers
 {
     public class CustomerCreatedHandler : IHandler<CustomerCreated>
     {
-        private readonly Dictionary<IDomainEvent, Type> _HandlerResult;
+        private readonly Dictionary<IDomainEvent, Type> _handlerResult;
 
         public CustomerCreatedHandler(Dictionary<IDomainEvent, Type> handlerResult)
         {
-            _HandlerResult = handlerResult;
+            _handlerResult = handlerResult;
         }
 
-        public Task HandleAsync(CustomerCreated args)
+        public Task HandleAsync(CustomerCreated @event)
         {
-            Console.WriteLine($"Customer created: {args.Name}");
-            _HandlerResult.Add(args, this.GetType());
-
+            Console.WriteLine($"Customer created: {@event.Name}");
+            _handlerResult.Add(@event, this.GetType());
             return Task.CompletedTask;
         }
     }
