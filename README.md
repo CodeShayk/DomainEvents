@@ -122,19 +122,68 @@ order.PlaceOrder(100.00m);  // Event is automatically dispatched to handlers
 
 ## Architecture Flow
 
+### Event Processing Flow
+
 ```
-Aggregate -> Interceptor -> Middleware -> Dispatcher -> Queue <- Listener -> Middleware -> Resolver -> Handler
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                     PUBLISHING PHASE                                           │
+│                (Aggregate.Raise() → Queue.Enqueue)                             │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+  Aggregate.Raise()
+        │
+        ▼
+  ┌───────────┐     ┌───────────┐     ┌────────────┐      ┌────────────┐
+  │ Aggregate │────▶│Interceptor│────▶│ Middleware│────▶│ Dispatcher │
+  │           │     │  (Proxy)  │     │(OnDispatch)│      │            │
+  └───────────┘     └───────────┘     └────────────┘      └─────┬──────┘
+                                                               │
+                                                               ▼
+                                                        ┌───────────────┐
+                                                        │     Queue     │
+                                                        │  (In-Memory)  │
+                                                        └───────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                     SUBSCRIPTION PHASE                                         │
+│                   (Queue → Listener → Handler)                                 │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+  Queue notifies Listener
+        │
+        ▼
+  ┌───────────┐      ┌────────────┐     ┌───────────┐      ┌───────────┐
+  │ Listener  │────▶│ Middleware │────▶│ Resolver  │────▶│  Handler  │
+  │           │      │(OnHandling)│     │           │      │           │
+  └───────────┘      └────────────┘     └─────┬─────┘      └───────────┘
+                                              │
+                                              ▼
+                                    ┌──────────────────┐
+                                    │ IHandler<T>      │
+                                    │ ISubscribes<T>   │
+                                    │ (includes        │
+                                    │  aggregates)     │
+                                    └──────────────────┘
 ```
 
+### Flow Summary
+
+1. **PUBLISHING PHASE** - Aggregate.Raise() → Interceptor → Middleware.OnDispatching() → Dispatcher → Queue.Enqueue() → Middleware.OnDispatched()
+2. **SUBSCRIPTION PHASE** - Queue notifies Listener → Middleware.OnHandling() → Resolver (finds handlers) → Handler.HandleAsync() (includes ISubscribes<T>) → Middleware.OnHandled()
+
+**Note:** `ISubscribes` - Aggregates can implement ISubscribes<TEvent> to handle events they raise. The proxy ensures both business logic AND handler execute.
+
+---
+
 **Components:**
-- **Aggregate** - Domain aggregate that raises events via `Raise()` or `RaiseAsync()`
-- **Interceptor** - Castle DynamicProxy interceptor (automatically dispatches events)
-- **Middleware** - Custom plugins that run before/after dispatch and handling
-- **Dispatcher** - Dispatches events (enqueues to queue)
-- **Queue** - In-flight non-persistent queue (fire-and-forget)
-- **Listener** - Processes events from queue via subscription delegate
-- **Resolver** - Resolves handlers for events
-- **Handler** - Handles the events
+- **Aggregate** - Domain aggregate that raises events via `Raise()` or `RaiseAsync()`. Can also implement `ISubscribes<TEvent>`.
+- **Interceptor** - Castle DynamicProxy that intercepts `Raise()`/`RaiseAsync()` and dispatches events.
+- **Middleware** - Custom plugins: `OnDispatching`, `OnDispatched`, `OnHandling`, `OnHandled`.
+- **Dispatcher** - Enqueues events to the queue.
+- **Queue** - In-memory queue (fire-and-forget).
+- **Listener** - Processes events from queue asynchronously.
+- **Resolver** - Resolves handlers for events.
+- **Handler** - Handles events: `IHandler<T>` or `ISubscribes<T>`.
 
 ---
 
@@ -173,9 +222,38 @@ public class MyMiddleware : IEventMiddleware
 
 **Registration:**
 ```csharp
-services.AddDomainEvents(assembly);
-services.AddSingleton<IEventMiddleware, MyMiddleware>();
+services.AddDomainEvents(assembly); // auto-registers handlers and middlewares which have parameter-less constructor. For types with parameterized constructor, you need to explicitly register as below.  
+services.AddSingleton<IEventMiddleware, MyMiddleware>(); 
 ```
+
+---
+
+## AggregateFactory Methods
+
+The `IAggregateFactory` provides multiple methods to create proxied aggregates:
+
+| Method | Description |
+|--------|-------------|
+| `CreateAsync<T>()` | Creates proxy using default constructor |
+| `CreateAsync<T>(params object[])` | Creates proxy with specified constructor arguments |
+| `CreateAsync(Type, params object[])` | Non-generic version with constructor arguments |
+| `CreateFromInstanceAsync<T>(T aggregate)` | Wraps existing aggregate instance in proxy |
+| `CreateFromServiceProviderAsync<T>()` | Resolves from DI and wraps in proxy (auto-resolves constructor dependencies) |
+| `CreateFromServiceProviderAsync(Type)` | Non-generic version resolving from DI |
+
+**Example - Using CreateFromServiceProviderAsync:**
+```csharp
+// Register aggregate with DI (constructor dependencies auto-resolved)
+services.AddTransient<OrderAggregate>();
+
+var factory = serviceProvider.GetRequiredService<IAggregateFactory>();
+
+// Creates proxy, resolves OrderAggregate from DI, wraps in proxy
+var order = await factory.CreateFromServiceProviderAsync<OrderAggregate>();
+order.PlaceOrder(100.00m);  // Events dispatched automatically
+```
+
+**Note:** When using `CreateFromServiceProviderAsync`, all constructor dependencies must be registered with the IoC container. The factory uses reflection to find the constructor with most parameters and resolves them from the service provider.
 
 ---
 
@@ -185,6 +263,7 @@ services.AddSingleton<IEventMiddleware, MyMiddleware>();
 |-----------|---------|
 | `IDomainEvent` | Marker interface for domain events |
 | `IHandler<TEvent>` | Async handler interface |
+| `ISubscribes<TEvent>` | Aggregate handler interface (implemented by aggregates to handle their own events) |
 | `IPublisher` | Interface for raising events |
 | `IAggregateFactory` | Factory for creating proxied aggregates |
 | `IEventMiddleware` | Plugin for event pipeline |

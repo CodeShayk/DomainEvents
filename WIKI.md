@@ -127,10 +127,27 @@ DomainEvents is a library for implementing transactional domain events in domain
 3. **EventDispatcher.DispatchAsync()** - Runs dispatch middleware, enqueues event
 4. **InMemoryEventQueue** - Stores event, invokes subscribed delegate immediately
 5. **EventListener** - Receives callback, processes event through handle middleware
-6. **Resolver** - Resolves handlers for the event type
-7. **Handler** - Processes the event
+6. **Resolver** - Resolves handlers for the event type (includes `ISubscribes<T>` implementations on aggregates)
+7. **Handler** - Processes the event (either standalone `IHandler<T>` or aggregate's `ISubscribes<T>.HandleAsync()`)
 
 **Note**: The dispatcher returns immediately after enqueueing (fire-and-forget). Event processing happens asynchronously via the queue subscription delegate.
+
+### Two-Phase Event Processing
+
+1. **Synchronous Phase** (Aggregate.Raise → Queue.Enqueue):
+   - Aggregate raises event via `Raise()` or `RaiseAsync()`
+   - EventInterceptor intercepts and calls EventDispatcher
+   - Dispatch middleware runs (`OnDispatchingAsync`)
+   - Event is enqueued to queue
+   - Dispatched middleware runs (`OnDispatchedAsync`)
+   - Returns to caller (aggregate business logic completes)
+
+2. **Asynchronous Phase** (Queue → Handler):
+   - Queue notifies subscribed listener
+   - Listener processes through handle middleware (`OnHandlingAsync`)
+   - Resolver finds all handlers (including `ISubscribes<T>` implementations)
+   - Each handler's `HandleAsync()` is called
+   - Handle middleware runs (`OnHandledAsync`)
 
 ---
 
@@ -243,6 +260,34 @@ public class OrderAggregate : Aggregate
     }
 }
 ```
+
+### 4a. Aggregate with ISubscribes (Self-Handling)
+
+Aggregates can implement `ISubscribes<TEvent>` to handle events they raise themselves:
+
+```csharp
+public class OrderAggregate : Aggregate, ISubscribes<OrderPlaced>
+{
+    public Task HandleAsync(OrderPlaced @event)
+    {
+        // Handle the event within the same aggregate
+        Console.WriteLine($"Order placed: {@event.OrderId}");
+        return Task.CompletedTask;
+    }
+
+    public void PlaceOrder(decimal amount)
+    {
+        var @event = new OrderPlaced
+        {
+            OrderId = Guid.NewGuid().ToString(),
+            Amount = amount
+        };
+        Raise(@event);
+    }
+}
+```
+
+**Note**: When an aggregate implements `ISubscribes<TEvent>`, the handler is called via the `Resolver` during the asynchronous event processing phase. This happens after the `Raise()` call completes (fire-and-forget pattern).
 
 ### 5. Register Services
 
@@ -1017,6 +1062,7 @@ public class AnotherMiddleware : IEventMiddleware
 |-----------|-------------|
 | `IDomainEvent` | Marker interface for domain events |
 | `IHandler<TEvent>` | Async handler interface for specific event type |
+| `ISubscribes<TEvent>` | Aggregate handler interface - implemented by aggregates to handle their own events |
 | `IHandler` | Marker interface for handlers |
 | `IPublisher` | Interface for manually raising events |
 | `IResolver` | Interface for resolving handlers |
@@ -1058,6 +1104,35 @@ public class AnotherMiddleware : IEventMiddleware
 | `AddDomainEventsWithDispatcher<TDispatcher>(assemblies)` | Register with custom dispatcher type |
 | `AddDomainEventsWithDispatcher(dispatcher, assemblies)` | Register with custom dispatcher instance |
 | `AddDomainEventsWithTelemetry(assemblies)` | Register with OpenTelemetry support |
+
+### IAggregateFactory Methods
+
+The `IAggregateFactory` provides multiple methods to create proxied aggregates:
+
+| Method | Description |
+|--------|-------------|
+| `CreateAsync<T>()` | Creates proxy using default constructor |
+| `CreateAsync<T>(params object[])` | Creates proxy with specified constructor arguments |
+| `CreateAsync(Type, params object[])` | Non-generic version with constructor arguments |
+| `CreateFromInstanceAsync<T>(T aggregate)` | Wraps existing aggregate instance in proxy |
+| `CreateFromServiceProviderAsync<T>()` | Resolves from DI and wraps in proxy (auto-resolves constructor deps) |
+| `CreateFromServiceProviderAsync(Type)` | Non-generic version resolving from DI |
+
+**Example - Using CreateFromServiceProviderAsync:**
+
+```csharp
+// Register aggregate with DI (constructor dependencies auto-resolved)
+services.AddTransient<OrderAggregate>();
+services.AddTransient<IOrderService, OrderService>();
+
+var factory = serviceProvider.GetRequiredService<IAggregateFactory>();
+
+// Creates proxy, resolves OrderAggregate from DI, wraps in proxy
+var order = await factory.CreateFromServiceProviderAsync<OrderAggregate>();
+order.PlaceOrder(100.00m);  // Events dispatched automatically
+```
+
+**Note:** When using `CreateFromServiceProviderAsync`, all constructor dependencies must be registered with the IoC container. The factory uses reflection to find the constructor with most parameters and resolves them from the service provider.
 
 ---
 
