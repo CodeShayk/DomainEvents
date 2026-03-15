@@ -16,7 +16,7 @@
     <PackageLicenseFile>License.md</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Title>DomainEvents</Title>
+    <Title>Domain Events</Title>
     <Authors>CodeShayk</Authors>
     <Company>CodeShayk</Company>
     <Product>DomainEvents</Product>
@@ -26,21 +26,17 @@
     <RepositoryUrl>https://github.com/CodeShayk/DomainEvents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>domain-events; domain-model, events; event-handling; c#; transactional-events; domain-pub/sub; event-pub-sub; ddd; aggregates; castle-dynamicproxy</PackageTags>
-    <Version>4.1.0</Version>
+    <Version>5.0.0</Version>
     <PackageIcon>pub-sub-icon.png</PackageIcon>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <PackageProjectUrl>https://github.com/CodeShayk/DomainEvents/wiki</PackageProjectUrl>
     <PackageReleaseNotes>
-      Release v4.2.0 - Updated all dependencies to latest stable versions
-      - OpenTelemetry.Api 1.11.2 -&gt; 1.15.0 (security fix for CVE-2025-27513)
-      - Castle.Core 5.1.1 -&gt; 5.2.1
-      - Microsoft.Extensions 9.0.0 -&gt; 10.0.5
-      - Targets .Net 10.0
-      - Target .Net 9.0
-      - Target .Net 8.0
-      - Target .Net Standard 2.1
-      - Target .Net Standard 2.0
+      Release v5.0.0 - Major update with new features, improvements, and bug fixes.
+      This release includes enhanced aggregate support, improved event handling performance, and better integration with Castle DynamicProxy.
+      For more details, see the release notes on GitHub: https://github.com/CodeShayk/DomainEvents/releases/tag/v5.0.0
     </PackageReleaseNotes>
+    <FileVersion>5.0.0</FileVersion>
+    <AssemblyVersion>5.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
